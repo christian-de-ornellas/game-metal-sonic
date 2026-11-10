@@ -20,6 +20,7 @@ export class ZoneSelect {
   ];
 
   private keyHandler: (e: KeyboardEvent) => void;
+  private entryRects: { x: number; y: number; w: number; h: number; index: number }[] = [];
 
   constructor(onSelect: (index: number) => void) {
     this.onSelect = onSelect;
@@ -46,6 +47,23 @@ export class ZoneSelect {
     };
 
     window.addEventListener("keydown", this.keyHandler);
+
+    window.addEventListener("click", (e) => {
+      if (!this.visible) return;
+      const canvas = (e.target as HTMLElement).closest("canvas");
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+
+      for (const entry of this.entryRects) {
+        if (cx >= entry.x && cx <= entry.x + entry.w && cy >= entry.y && cy <= entry.y + entry.h) {
+          this.selectedIndex = entry.index;
+          this.select();
+          return;
+        }
+      }
+    });
   }
 
   show() {
@@ -91,10 +109,12 @@ export class ZoneSelect {
     const startY = h * 0.25;
     const entryWidth = Math.min(500, w * 0.7);
 
+    this.entryRects = [];
     for (let i = 0; i < this.zones.length; i++) {
       const zone = this.zones[i];
       const y = startY + i * (entryHeight + 15);
       const isSelected = i === this.selectedIndex;
+      this.entryRects.push({ x: centerX - entryWidth / 2, y, w: entryWidth, h: entryHeight, index: i });
 
       // Selection highlight
       if (isSelected) {
@@ -145,7 +165,7 @@ export class ZoneSelect {
     const hintAlpha = 0.5 + Math.sin(this.time * 2) * 0.3;
     ctx.globalAlpha = hintAlpha;
     r.drawScreenText(
-      "UP/DOWN: Navigate  |  SPACE/ENTER: Select  |  ESC: Back",
+      "UP/DOWN or TAP: Navigate  |  SPACE/ENTER: Select  |  ESC: Back",
       centerX, h - 50,
       "#888888", 14, "center"
     );

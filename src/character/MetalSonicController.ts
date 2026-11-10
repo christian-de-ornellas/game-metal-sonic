@@ -50,6 +50,7 @@ export class MetalSonicController {
   private loopCenterX = 0;
   private loopCenterY = 0;
   private loopRadius = 0;
+  private loopGroundY = 0;
   loopCooldown = 0; // public so LoopBuilder can read it
 
   constructor(
@@ -135,12 +136,13 @@ export class MetalSonicController {
     this.coyoteTimer = 0;
   }
 
-  enterLoop(centerX: number, centerY: number, radius: number) {
+  enterLoop(centerX: number, centerY: number, radius: number, groundY: number = 0) {
     if (this.loopCooldown > 0) return;
     this.inLoop = true;
     this.loopCenterX = centerX;
     this.loopCenterY = centerY;
     this.loopRadius = radius;
+    this.loopGroundY = groundY;
     // Calculate current angle from position relative to center
     const dx = this.x - centerX;
     const dy = this.y - centerY;
@@ -426,26 +428,29 @@ export class MetalSonicController {
     this.inLoop = false;
     this.loopCooldown = 0.5; // prevent immediate re-entry
 
-    // Determine exit velocity from current position on loop
-    // Tangent direction for CCW: (-sin(angle), cos(angle))
-    const speed = this.groundSpeed;
-    const tangentX = -Math.sin(this.loopAngle) * Math.sign(speed);
-    const tangentY = Math.cos(this.loopAngle) * Math.sign(speed);
-    this.groundSpeed = tangentX * Math.abs(speed);
-    this.verticalSpeed = tangentY * Math.abs(speed);
+    const speed = Math.abs(this.groundSpeed);
 
-    // If near the bottom of the loop, snap to ground and zero vertical
-    if (this.y < this.loopCenterY - this.loopRadius * 0.5) {
-      this.verticalSpeed = Math.max(this.verticalSpeed, 0);
-    }
-
-    // Transition to appropriate state
-    if (this.y > this.loopCenterY - this.loopRadius + 1) {
-      // Exiting above ground level — airborne
-      this.state = SonicState.IN_AIR;
+    if (this.loopAngleTraversed >= Math.PI * 2) {
+      // Completed full revolution — exit running forward on the ground past the loop
+      this.x = this.loopCenterX + this.loopRadius + 2;
+      this.y = this.loopGroundY;
+      this.groundSpeed = speed; // always positive (moving right/forward)
+      this.verticalSpeed = 0;
+      this.facingRight = true;
+      this.state = speed > 0.5 ? SonicState.RUNNING : SonicState.IDLE;
     } else {
-      // Near ground level
-      this.state = Math.abs(this.groundSpeed) > 0.5 ? SonicState.RUNNING : SonicState.IDLE;
+      // Fell off the loop (too slow) — exit with tangential velocity
+      const tangentX = -Math.sin(this.loopAngle) * Math.sign(this.groundSpeed);
+      const tangentY = Math.cos(this.loopAngle) * Math.sign(this.groundSpeed);
+      this.groundSpeed = tangentX * speed;
+      this.verticalSpeed = tangentY * speed;
+
+      // If near the bottom of the loop, snap to ground and zero vertical
+      if (this.y < this.loopCenterY - this.loopRadius * 0.5) {
+        this.verticalSpeed = Math.max(this.verticalSpeed, 0);
+      }
+
+      this.state = SonicState.IN_AIR;
     }
   }
 

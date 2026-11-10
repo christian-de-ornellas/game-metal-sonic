@@ -68,10 +68,10 @@ export class EmeraldHillZone implements Zone {
 
   build() {
     // Loop at x=135, terrain is flat there (height=0), center above ground
-    this.loopBuilder.addLoop(135, 8, 8, 4);
+    this.loopBuilder.addLoop(135, 8, 8, 4, 0);
 
     // Second loop at x=310
-    this.loopBuilder.addLoop(310, 8, 7, 5);
+    this.loopBuilder.addLoop(310, 8, 7, 5, 0);
 
     // Bridge over water section
     this.bridgeBuilder.addBridge(190, -3.5, 12, 2);

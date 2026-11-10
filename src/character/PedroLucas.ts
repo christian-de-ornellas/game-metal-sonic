@@ -51,7 +51,7 @@ export function drawPedroLucas(
 
 // --- BODY ---
 function drawBody(ctx: CanvasRenderingContext2D, s: number) {
-  const bw = s * 0.45;
+  const bw = s * 0.48;
   const bh = s * 0.5;
 
   // Maroon/burgundy upper shirt
@@ -127,16 +127,12 @@ function drawHair(ctx: CanvasRenderingContext2D, s: number, headY: number, headR
   ctx.fillStyle = "#1a1a1a";
   ctx.fill();
 
-  // Fringe / bangs — jagged strands across forehead
+  // Fringe / bangs — smooth straight fringe falling over forehead
   ctx.beginPath();
-  ctx.moveTo(-headR * 0.85, headY - headR * 0.45);
-  ctx.lineTo(-headR * 0.6, headY - headR * 0.25);
-  ctx.lineTo(-headR * 0.35, headY - headR * 0.5);
-  ctx.lineTo(-headR * 0.1, headY - headR * 0.2);
-  ctx.lineTo(headR * 0.15, headY - headR * 0.48);
-  ctx.lineTo(headR * 0.4, headY - headR * 0.22);
-  ctx.lineTo(headR * 0.65, headY - headR * 0.5);
-  ctx.lineTo(headR * 0.85, headY - headR * 0.35);
+  ctx.moveTo(-headR * 0.88, headY - headR * 0.35);
+  ctx.quadraticCurveTo(-headR * 0.55, headY - headR * 0.22, -headR * 0.2, headY - headR * 0.28);
+  ctx.quadraticCurveTo(headR * 0.1, headY - headR * 0.32, headR * 0.45, headY - headR * 0.26);
+  ctx.quadraticCurveTo(headR * 0.7, headY - headR * 0.22, headR * 0.88, headY - headR * 0.35);
   // Close over the top
   ctx.lineTo(headR * 0.9, headY - headR * 0.8);
   ctx.quadraticCurveTo(0, headY - headR * 1.35, -headR * 0.9, headY - headR * 0.8);
@@ -161,19 +157,19 @@ function drawGlasses(ctx: CanvasRenderingContext2D, s: number, headY: number, he
 
   ctx.save();
   ctx.lineWidth = s * 0.04;
-  ctx.strokeStyle = "#2a2a2a";
+  ctx.strokeStyle = "#1a2a5a";
 
   // Left lens
   ctx.beginPath();
   ctx.roundRect(-glassW - bridge, glassY - glassH / 2, glassW, glassH, s * 0.03);
-  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fillStyle = "rgba(140, 170, 220, 0.35)";
   ctx.fill();
   ctx.stroke();
 
   // Right lens
   ctx.beginPath();
   ctx.roundRect(bridge, glassY - glassH / 2, glassW, glassH, s * 0.03);
-  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fillStyle = "rgba(140, 170, 220, 0.35)";
   ctx.fill();
   ctx.stroke();
 
@@ -265,7 +261,7 @@ function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft
 
   // Upper arm (skin)
   ctx.beginPath();
-  ctx.roundRect(-s * 0.045, 0, s * 0.09, s * 0.18, s * 0.04);
+  ctx.roundRect(-s * 0.05, 0, s * 0.1, s * 0.18, s * 0.04);
   ctx.fillStyle = "#e8b88a";
   ctx.fill();
 
@@ -304,10 +300,10 @@ function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angl
   ctx.fillStyle = "#34495e";
   ctx.fill();
 
-  // Sneaker
+  // Sneaker (light)
   const footGrad = ctx.createLinearGradient(0, s * 0.33, 0, s * 0.42);
-  footGrad.addColorStop(0, "#444444");
-  footGrad.addColorStop(1, "#222222");
+  footGrad.addColorStop(0, "#e8e8e8");
+  footGrad.addColorStop(1, "#cccccc");
   ctx.beginPath();
   ctx.ellipse(s * 0.02, s * 0.39, s * 0.08, s * 0.05, 0, 0, Math.PI * 2);
   ctx.fillStyle = footGrad;
@@ -378,15 +374,15 @@ export function drawPedroLucasPreview(
     ctx.roundRect(offX - s * 0.035, s * 0.28, s * 0.07, s * 0.16, s * 0.03);
     ctx.fillStyle = "#2c3e50";
     ctx.fill();
-    // Sneakers
+    // Sneakers (light)
     ctx.beginPath();
     ctx.ellipse(offX + s * 0.01, s * 0.46, s * 0.05, s * 0.03, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#333333";
+    ctx.fillStyle = "#e0e0e0";
     ctx.fill();
   }
 
   // Body — maroon top, white bottom
-  const bw = s * 0.28;
+  const bw = s * 0.30;
   const bh = s * 0.3;
   const bodyGrad = ctx.createLinearGradient(0, -s * 0.25, 0, s * 0.15);
   bodyGrad.addColorStop(0, "#8b2252");
@@ -421,14 +417,12 @@ export function drawPedroLucasPreview(
   ctx.fillStyle = "#1a1a1a";
   ctx.fill();
 
-  // Bangs
+  // Bangs — smooth straight fringe
   ctx.beginPath();
-  ctx.moveTo(-headR * 0.75, headY - headR * 0.4);
-  ctx.lineTo(-headR * 0.45, headY - headR * 0.2);
-  ctx.lineTo(-headR * 0.15, headY - headR * 0.42);
-  ctx.lineTo(headR * 0.15, headY - headR * 0.18);
-  ctx.lineTo(headR * 0.45, headY - headR * 0.42);
-  ctx.lineTo(headR * 0.75, headY - headR * 0.3);
+  ctx.moveTo(-headR * 0.78, headY - headR * 0.32);
+  ctx.quadraticCurveTo(-headR * 0.45, headY - headR * 0.18, -headR * 0.15, headY - headR * 0.24);
+  ctx.quadraticCurveTo(headR * 0.1, headY - headR * 0.28, headR * 0.4, headY - headR * 0.22);
+  ctx.quadraticCurveTo(headR * 0.6, headY - headR * 0.18, headR * 0.78, headY - headR * 0.32);
   ctx.lineTo(headR * 0.8, headY - headR * 0.7);
   ctx.quadraticCurveTo(0, headY - headR * 1.3, -headR * 0.8, headY - headR * 0.7);
   ctx.closePath();
@@ -442,15 +436,15 @@ export function drawPedroLucasPreview(
   const bridge = headR * 0.07;
 
   ctx.lineWidth = s * 0.025;
-  ctx.strokeStyle = "#2a2a2a";
+  ctx.strokeStyle = "#1a2a5a";
   ctx.beginPath();
   ctx.roundRect(-glassW - bridge, glassY - glassH / 2, glassW, glassH, s * 0.02);
-  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fillStyle = "rgba(140, 170, 220, 0.35)";
   ctx.fill();
   ctx.stroke();
   ctx.beginPath();
   ctx.roundRect(bridge, glassY - glassH / 2, glassW, glassH, s * 0.02);
-  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fillStyle = "rgba(140, 170, 220, 0.35)";
   ctx.fill();
   ctx.stroke();
   // Bridge

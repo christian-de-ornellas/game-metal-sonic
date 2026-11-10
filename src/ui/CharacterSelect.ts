@@ -24,6 +24,9 @@ export class CharacterSelect {
 
   private keyHandler: (e: KeyboardEvent) => void;
 
+  // Slot layout info for click detection
+  private slotRects: { x: number; y: number; w: number; h: number; index: number }[] = [];
+
   constructor(onSelect: (character: CharacterChoice) => void) {
     this.onSelect = onSelect;
 
@@ -49,6 +52,26 @@ export class CharacterSelect {
     };
 
     window.addEventListener("keydown", this.keyHandler);
+
+    window.addEventListener("click", (e) => {
+      if (!this.visible) return;
+      const canvas = (e.target as HTMLElement).closest("canvas");
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+
+      for (const slot of this.slotRects) {
+        if (cx >= slot.x && cx <= slot.x + slot.w && cy >= slot.y && cy <= slot.y + slot.h) {
+          if (this.selectedIndex === slot.index) {
+            this.confirm();
+          } else {
+            this.selectedIndex = slot.index;
+          }
+          return;
+        }
+      }
+    });
   }
 
   get currentPendingAction(): PendingAction {
@@ -101,10 +124,12 @@ export class CharacterSelect {
     const startX = centerX - totalWidth / 2 + slotSize / 2;
     const slotY = h * 0.42;
 
+    this.slotRects = [];
     for (let i = 0; i < CHARACTERS.length; i++) {
       const char = CHARACTERS[i];
       const cx = startX + i * (slotSize + gap);
       const isSelected = i === this.selectedIndex;
+      this.slotRects.push({ x: cx - slotSize / 2, y: slotY - slotSize / 2, w: slotSize, h: slotSize, index: i });
 
       // Selection glow
       if (isSelected) {
@@ -155,7 +180,7 @@ export class CharacterSelect {
     const hintAlpha = 0.5 + Math.sin(this.time * 2) * 0.3;
     ctx.globalAlpha = hintAlpha;
     r.drawScreenText(
-      "LEFT/RIGHT: Choose  |  SPACE/ENTER: Select  |  ESC: Back",
+      "LEFT/RIGHT or TAP: Choose  |  SPACE/ENTER: Select  |  ESC: Back",
       centerX, h - 50,
       "#888888", 14, "center",
     );

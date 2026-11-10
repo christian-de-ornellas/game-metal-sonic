@@ -1,3 +1,5 @@
+import { TouchState } from "../ui/TouchControls";
+
 export interface InputState {
   left: boolean;
   right: boolean;
@@ -13,6 +15,10 @@ export class InputManager {
   private keys: Map<string, boolean> = new Map();
   private prevJump = false;
   private gamepadIndex: number | null = null;
+  private touchState: TouchState = {
+    left: false, right: false, down: false,
+    jump: false, jumpPressed: false, jumpReleased: false,
+  };
 
   constructor() {
     window.addEventListener("keydown", (e) => {
@@ -31,16 +37,20 @@ export class InputManager {
     });
   }
 
+  setTouchState(touch: TouchState) {
+    this.touchState = touch;
+  }
+
   private isDown(key: string): boolean {
     return this.keys.get(key) === true;
   }
 
   getState(): InputState {
-    let left = this.isDown("arrowleft") || this.isDown("a");
-    let right = this.isDown("arrowright") || this.isDown("d");
+    let left = this.isDown("arrowleft") || this.isDown("a") || this.touchState.left;
+    let right = this.isDown("arrowright") || this.isDown("d") || this.touchState.right;
     let up = this.isDown("arrowup") || this.isDown("w");
-    let down = this.isDown("arrowdown") || this.isDown("s");
-    let jump = this.isDown(" ") || this.isDown("z");
+    let down = this.isDown("arrowdown") || this.isDown("s") || this.touchState.down;
+    let jump = this.isDown(" ") || this.isDown("z") || this.touchState.jump;
 
     // Gamepad
     if (this.gamepadIndex !== null) {
@@ -57,9 +67,12 @@ export class InputManager {
       }
     }
 
-    const jumpPressed = jump && !this.prevJump;
-    const jumpReleased = !jump && this.prevJump;
+    const kbJumpPressed = jump && !this.prevJump;
+    const kbJumpReleased = !jump && this.prevJump;
     this.prevJump = jump;
+
+    const jumpPressed = kbJumpPressed || this.touchState.jumpPressed;
+    const jumpReleased = kbJumpReleased || this.touchState.jumpReleased;
 
     return {
       left,

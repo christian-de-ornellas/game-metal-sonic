@@ -108,7 +108,7 @@ export class TitleScreen {
       // Blink start text
       const blinkAlpha = 0.5 + Math.sin(this.time * 3) * 0.5;
       ctx.globalAlpha = blinkAlpha;
-      r.drawScreenText("PRESS SPACE OR CLICK TO START", centerX, centerY - 10, "white", 22, "center", "black");
+      r.drawScreenText("PRESS SPACE, CLICK OR TAP TO START", centerX, centerY - 10, "white", 22, "center", "black");
       ctx.globalAlpha = 1;
 
       // Zone select option

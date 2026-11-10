@@ -13,6 +13,7 @@ import { ActClear } from "./ui/ActClear";
 import { ParticleSystem } from "./core/ParticleSystem";
 import { SpeedEffects } from "./core/SpeedEffects";
 import { ScorePopup } from "./ui/ScorePopup";
+import { TouchControls } from "./ui/TouchControls";
 import { ZoneManager, GamePhase } from "./level/ZoneManager";
 import { Zone, LevelEvents } from "./level/Zone";
 import { EmeraldHillZone } from "./level/EmeraldHillZone";
@@ -26,6 +27,7 @@ function main() {
 
   const renderer = new Renderer(canvas);
   const input = new InputManager();
+  const touchControls = new TouchControls(canvas);
   const gameState = new GameState();
   const camera = new Camera2D(renderer.width, renderer.height);
   const hud = new HUD(gameState);
@@ -392,7 +394,8 @@ function main() {
       // Update game state timers
       gameState.update(dt);
 
-      // Player input
+      // Player input (merge touch controls)
+      input.setTouchState(touchControls.getState());
       const inputState = input.getState();
 
       // Terrain height function that includes bridges and platforms
@@ -558,6 +561,11 @@ function main() {
 
       // HUD (screen space, not affected by camera)
       hud.render(renderer, controller.getSpeed());
+
+      // Touch controls overlay (only on touch devices during gameplay)
+      if (touchControls.isTouchDevice && phase === "playing") {
+        touchControls.render(renderer);
+      }
     }
 
     // Act clear overlay
