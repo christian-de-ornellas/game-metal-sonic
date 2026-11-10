@@ -1,7 +1,7 @@
 import { Zone } from "./Zone";
 import { GameState } from "../core/GameState";
 
-export type GamePhase = "title" | "playing" | "act_clear" | "zone_select" | "game_over";
+export type GamePhase = "title" | "playing" | "act_clear" | "zone_select" | "character_select" | "game_over";
 
 export type ZoneFactory = (gs: GameState) => Zone;
 

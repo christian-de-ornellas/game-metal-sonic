@@ -4,9 +4,11 @@ import { GameState } from "./core/GameState";
 import { Camera2D } from "./camera/Camera2D";
 import { MetalSonicController, SonicState } from "./character/MetalSonicController";
 import { drawMetalSonic } from "./character/MetalSonic";
+import { drawPedroLucas } from "./character/PedroLucas";
 import { HUD } from "./ui/HUD";
 import { TitleScreen } from "./ui/TitleScreen";
 import { ZoneSelect } from "./ui/ZoneSelect";
+import { CharacterSelect, CharacterChoice } from "./ui/CharacterSelect";
 import { ActClear } from "./ui/ActClear";
 import { ParticleSystem } from "./core/ParticleSystem";
 import { SpeedEffects } from "./core/SpeedEffects";
@@ -42,6 +44,7 @@ function main() {
   let phase: GamePhase = "title";
   let actClear: ActClear | null = null;
   let gameWon = false;
+  let selectedCharacter: CharacterChoice = "metal_sonic";
 
   function loadZone(index: number) {
     level = zoneManager.loadZone(index);
@@ -69,18 +72,31 @@ function main() {
     loadZone(index);
   });
 
-  // Title screen
-  const titleScreen = new TitleScreen(
-    (zoneIndex: number) => {
-      gameState.titleScreen = false;
-      gameState.reset();
-      loadZone(zoneIndex);
-    },
-    () => {
-      // Zone select callback
-      gameState.titleScreen = false;
+  // Character select screen
+  const characterSelect = new CharacterSelect((character: CharacterChoice) => {
+    selectedCharacter = character;
+    const action = characterSelect.currentPendingAction;
+    if (action === "zone_select") {
       phase = "zone_select";
       zoneSelect.show();
+    } else {
+      gameState.reset();
+      loadZone(0);
+    }
+  });
+
+  // Title screen
+  const titleScreen = new TitleScreen(
+    (_zoneIndex: number) => {
+      gameState.titleScreen = false;
+      phase = "character_select";
+      characterSelect.show("start");
+    },
+    () => {
+      // Zone select callback → go through character select first
+      gameState.titleScreen = false;
+      phase = "character_select";
+      characterSelect.show("zone_select");
     },
   );
 
@@ -361,6 +377,9 @@ function main() {
     // Title screen
     titleScreen.update(dt);
 
+    // Character select
+    characterSelect.update(dt);
+
     // Zone select
     zoneSelect.update(dt);
 
@@ -513,7 +532,8 @@ function main() {
       const invincibilityFlicker = gameState.invincible ?
         Math.sin(gameState.invincibilityTimer * 15) > 0 : true;
 
-      drawMetalSonic(
+      const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : drawMetalSonic;
+      drawCharacter(
         renderer,
         controller.x,
         controller.y + 0.8, // offset so feet are on ground
@@ -575,6 +595,9 @@ function main() {
 
     // Zone select overlay
     zoneSelect.render(renderer);
+
+    // Character select overlay
+    characterSelect.render(renderer);
 
     // Title screen overlay
     titleScreen.render(renderer);
