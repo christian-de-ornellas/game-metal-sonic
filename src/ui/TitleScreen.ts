@@ -7,6 +7,8 @@ export class TitleScreen {
   private time = 0;
   private isGameOver = false;
   private started = false;
+  private linkBounds = { x: 0, y: 0, w: 0, h: 0 };
+  private canvas: HTMLCanvasElement | null = null;
 
   constructor(onStart: (zoneIndex: number) => void, onZoneSelect: () => void) {
     this.onStart = onStart;
@@ -26,10 +28,22 @@ export class TitleScreen {
       }
     });
 
-    window.addEventListener("click", () => {
-      if (this.visible) {
-        this.start();
+    window.addEventListener("click", (e) => {
+      if (!this.visible) return;
+
+      // Check if click is on the website link
+      if (this.canvas && !this.isGameOver) {
+        const rect = this.canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        const b = this.linkBounds;
+        if (clickX >= b.x && clickX <= b.x + b.w && clickY >= b.y && clickY <= b.y + b.h) {
+          window.open("https://possidonio.com", "_blank");
+          return;
+        }
       }
+
+      this.start();
     });
   }
 
@@ -102,6 +116,16 @@ export class TitleScreen {
 
       // Controls
       r.drawScreenText("ARROWS/WASD: Move  |  SPACE/Z: Jump  |  DOWN + JUMP: Spin Dash", centerX, centerY + 80, "#aaaaaa", 16, "center");
+
+      // Credits
+      r.drawScreenText("Created by Christian Possidonio & Pedro Lucas Possidonio", centerX, h - 60, "#6688bb", 14, "center");
+      r.drawScreenText("possidonio.com", centerX, h - 38, "#4488ff", 14, "center");
+
+      // Store link hit area for click detection
+      this.canvas = ctx.canvas;
+      ctx.font = `14px monospace`;
+      const linkW = ctx.measureText("possidonio.com").width;
+      this.linkBounds = { x: centerX - linkW / 2, y: h - 52, w: linkW, h: 20 };
     }
   }
 }
