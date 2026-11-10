@@ -1,57 +1,8 @@
 import { Renderer } from "../core/Renderer";
 import { MetalSonicAnimator } from "./MetalSonicAnimator";
-import sheetUrl from "../assets/Personagem Pedro Lucas.jpeg";
 
-// Sprite sheet layout (2x2 grid):
-// Top-left: IDLE     | Top-right: ATTACK
-// Bottom-left: RUNNING | Bottom-right: HIT
-
-const sheetImg = new Image();
-sheetImg.src = sheetUrl;
-let sheetReady = false;
-sheetImg.onload = () => { sheetReady = true; };
-
-// Frame regions in the sprite sheet (sx, sy, sw, sh) — set after load
-// These are ratios of the full image, resolved to pixels on first draw
-let frameW = 0;
-let frameH = 0;
-let framesResolved = false;
-
-interface Frame { sx: number; sy: number; sw: number; sh: number }
-
-const frames: Record<string, Frame> = {
-  idle:    { sx: 0, sy: 0, sw: 0, sh: 0 },
-  attack:  { sx: 0, sy: 0, sw: 0, sh: 0 },
-  running: { sx: 0, sy: 0, sw: 0, sh: 0 },
-  hit:     { sx: 0, sy: 0, sw: 0, sh: 0 },
-};
-
-function resolveFrames() {
-  if (framesResolved || !sheetReady) return;
-  const w = sheetImg.naturalWidth;
-  const h = sheetImg.naturalHeight;
-  frameW = w / 2;
-  frameH = h / 2;
-
-  frames.idle    = { sx: 0,      sy: 0,      sw: frameW, sh: frameH };
-  frames.attack  = { sx: frameW, sy: 0,      sw: frameW, sh: frameH };
-  frames.running = { sx: 0,      sy: frameH, sw: frameW, sh: frameH };
-  frames.hit     = { sx: frameW, sy: frameH, sw: frameW, sh: frameH };
-  framesResolved = true;
-}
-
-/** Size in world units (must roughly match Metal Sonic hitbox ~1 unit wide) */
-const WORLD_SIZE = 1.8;
-
-function getFrame(state: string): Frame {
-  switch (state) {
-    case "running": return frames.running;
-    case "spinning": return frames.attack;
-    case "air": return frames.running;
-    case "hurt": return frames.hit;
-    default: return frames.idle;
-  }
-}
+const BODY_HEIGHT = 40;
+const SCALE = 0.025;
 
 export function drawPedroLucas(
   r: Renderer,
@@ -63,72 +14,474 @@ export function drawPedroLucas(
   invincibilityFlicker: boolean,
 ) {
   if (invincible && !invincibilityFlicker) return;
-  if (!sheetReady) return;
-  resolveFrames();
 
   const ctx = r.ctx;
   const sx = r.worldToScreenX(x);
   const sy = r.worldToScreenY(y);
-  const drawSize = WORLD_SIZE * r.zoom;
-
-  // Aspect ratio of each frame cell
-  const aspect = frameW / frameH;
-  const drawW = drawSize * aspect;
-  const drawH = drawSize;
+  const s = r.zoom * SCALE * BODY_HEIGHT;
+  const dir = facingRight ? 1 : -1;
 
   ctx.save();
   ctx.translate(sx, sy);
+  ctx.scale(dir, 1);
 
-  // Flip when facing left (sprite default faces right)
-  if (!facingRight) {
-    ctx.scale(-1, 1);
-  }
-
-  // Hurt flicker
-  if (animator.currentState === "hurt" && !animator.flickerVisible) {
+  if (isSpinning) {
+    drawSpinBall(ctx, s, animator.spinAngle);
     ctx.restore();
     return;
   }
 
-  const frame = isSpinning ? frames.attack : getFrame(animator.currentState);
-
-  if (isSpinning) {
-    // Spin ball: rotate the attack frame
-    ctx.rotate(animator.spinAngle);
-    ctx.drawImage(
-      sheetImg,
-      frame.sx, frame.sy, frame.sw, frame.sh,
-      -drawW / 2, -drawH / 2, drawW, drawH,
-    );
-  } else {
-    // Vertical bob for running
-    let bobY = 0;
-    if (animator.currentState === "running") {
-      bobY = Math.sin(animator.time * 12) * drawH * 0.03;
-    }
-
-    ctx.drawImage(
-      sheetImg,
-      frame.sx, frame.sy, frame.sw, frame.sh,
-      -drawW / 2, -drawH + bobY, drawW, drawH,
-    );
+  if (!animator.flickerVisible) {
+    ctx.restore();
+    return;
   }
+
+  const lean = animator.bodyLean;
+  ctx.rotate(-lean * dir);
+
+  drawLeg(ctx, s, 0.15 * s, animator.leftLegAngle);
+  drawLeg(ctx, s, -0.15 * s, animator.rightLegAngle);
+  drawBody(ctx, s);
+  drawArm(ctx, s, animator.leftArmAngle, true);
+  drawArm(ctx, s, animator.rightArmAngle, false);
+  drawHead(ctx, s, animator.breathOffset * s * 0.02);
 
   ctx.restore();
 }
 
-/** Draw a small idle preview (screen-space) for character select */
+// --- BODY ---
+function drawBody(ctx: CanvasRenderingContext2D, s: number) {
+  const bw = s * 0.45;
+  const bh = s * 0.5;
+
+  // Maroon/burgundy upper shirt
+  const grad = ctx.createLinearGradient(0, -s * 0.45, 0, s * 0.15);
+  grad.addColorStop(0, "#8b2252");
+  grad.addColorStop(0.55, "#6b1a3e");
+  grad.addColorStop(0.56, "#f0f0f0");
+  grad.addColorStop(1, "#e0e0e0");
+
+  ctx.beginPath();
+  ctx.ellipse(0, -s * 0.2, bw, bh, 0, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Shirt outline
+  ctx.beginPath();
+  ctx.ellipse(0, -s * 0.2, bw, bh, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(0,0,0,0.2)";
+  ctx.lineWidth = s * 0.02;
+  ctx.stroke();
+}
+
+// --- HEAD ---
+function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number) {
+  const headY = -s * 0.65 + breathY;
+  const headR = s * 0.34;
+
+  // Skin
+  const skinGrad = ctx.createRadialGradient(
+    -headR * 0.2, headY - headR * 0.25, headR * 0.1,
+    0, headY, headR,
+  );
+  skinGrad.addColorStop(0, "#f5d0a9");
+  skinGrad.addColorStop(0.7, "#e8b88a");
+  skinGrad.addColorStop(1, "#d4976a");
+  ctx.beginPath();
+  ctx.arc(0, headY, headR, 0, Math.PI * 2);
+  ctx.fillStyle = skinGrad;
+  ctx.fill();
+
+  // Hair (dark, messy bowl cut)
+  drawHair(ctx, s, headY, headR);
+
+  // Glasses
+  drawGlasses(ctx, s, headY, headR);
+
+  // Smile
+  drawSmile(ctx, s, headY, headR);
+
+  // Ears
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(side * headR * 0.92, headY + headR * 0.05, headR * 0.14, 0, Math.PI * 2);
+    ctx.fillStyle = "#e8b88a";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(side * headR * 0.92, headY + headR * 0.05, headR * 0.08, 0, Math.PI * 2);
+    ctx.fillStyle = "#d4976a";
+    ctx.fill();
+  }
+}
+
+function drawHair(ctx: CanvasRenderingContext2D, s: number, headY: number, headR: number) {
+  ctx.save();
+
+  // Main hair mass
+  ctx.beginPath();
+  ctx.arc(0, headY - headR * 0.15, headR * 1.08, Math.PI * 0.85, Math.PI * 0.15, true);
+  // Close over the top
+  ctx.quadraticCurveTo(headR * 0.6, headY - headR * 1.3, 0, headY - headR * 1.2);
+  ctx.quadraticCurveTo(-headR * 0.6, headY - headR * 1.3, -headR * 0.95, headY - headR * 0.1);
+  ctx.closePath();
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fill();
+
+  // Fringe / bangs — jagged strands across forehead
+  ctx.beginPath();
+  ctx.moveTo(-headR * 0.85, headY - headR * 0.45);
+  ctx.lineTo(-headR * 0.6, headY - headR * 0.25);
+  ctx.lineTo(-headR * 0.35, headY - headR * 0.5);
+  ctx.lineTo(-headR * 0.1, headY - headR * 0.2);
+  ctx.lineTo(headR * 0.15, headY - headR * 0.48);
+  ctx.lineTo(headR * 0.4, headY - headR * 0.22);
+  ctx.lineTo(headR * 0.65, headY - headR * 0.5);
+  ctx.lineTo(headR * 0.85, headY - headR * 0.35);
+  // Close over the top
+  ctx.lineTo(headR * 0.9, headY - headR * 0.8);
+  ctx.quadraticCurveTo(0, headY - headR * 1.35, -headR * 0.9, headY - headR * 0.8);
+  ctx.closePath();
+  ctx.fillStyle = "#222222";
+  ctx.fill();
+
+  // Hair highlight
+  ctx.beginPath();
+  ctx.ellipse(-headR * 0.15, headY - headR * 0.85, headR * 0.3, headR * 0.12, -0.2, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(60, 60, 70, 0.5)";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawGlasses(ctx: CanvasRenderingContext2D, s: number, headY: number, headR: number) {
+  const glassY = headY + headR * 0.0;
+  const glassW = headR * 0.38;
+  const glassH = headR * 0.3;
+  const bridge = headR * 0.08;
+
+  ctx.save();
+  ctx.lineWidth = s * 0.04;
+  ctx.strokeStyle = "#2a2a2a";
+
+  // Left lens
+  ctx.beginPath();
+  ctx.roundRect(-glassW - bridge, glassY - glassH / 2, glassW, glassH, s * 0.03);
+  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fill();
+  ctx.stroke();
+
+  // Right lens
+  ctx.beginPath();
+  ctx.roundRect(bridge, glassY - glassH / 2, glassW, glassH, s * 0.03);
+  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fill();
+  ctx.stroke();
+
+  // Bridge
+  ctx.beginPath();
+  ctx.moveTo(-bridge, glassY);
+  ctx.lineTo(bridge, glassY);
+  ctx.stroke();
+
+  // Temple arms (sides)
+  ctx.beginPath();
+  ctx.moveTo(-glassW - bridge, glassY);
+  ctx.lineTo(-headR * 0.85, glassY - headR * 0.05);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bridge + glassW, glassY);
+  ctx.lineTo(headR * 0.85, glassY - headR * 0.05);
+  ctx.stroke();
+
+  // Eyes (pupils inside lenses)
+  for (const side of [-1, 1]) {
+    const eyeX = side * (bridge + glassW / 2);
+    ctx.beginPath();
+    ctx.arc(eyeX + s * 0.02, glassY + glassH * 0.05, s * 0.04, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fill();
+    // Eye highlight
+    ctx.beginPath();
+    ctx.arc(eyeX + s * 0.035, glassY - glassH * 0.05, s * 0.015, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+  }
+
+  // Lens glare
+  ctx.beginPath();
+  ctx.ellipse(bridge + glassW * 0.7, glassY - glassH * 0.2, s * 0.02, s * 0.01, -0.4, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSmile(ctx: CanvasRenderingContext2D, s: number, headY: number, headR: number) {
+  const mouthY = headY + headR * 0.45;
+
+  ctx.save();
+
+  // Big open smile
+  ctx.beginPath();
+  ctx.ellipse(s * 0.02, mouthY, headR * 0.35, headR * 0.2, 0, 0, Math.PI);
+  ctx.fillStyle = "#cc3333";
+  ctx.fill();
+
+  // Teeth (top row)
+  ctx.beginPath();
+  ctx.ellipse(s * 0.02, mouthY, headR * 0.3, headR * 0.08, 0, 0, Math.PI, true);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  // Tooth lines
+  ctx.strokeStyle = "rgba(0,0,0,0.15)";
+  ctx.lineWidth = s * 0.01;
+  for (let i = -2; i <= 2; i++) {
+    const tx = s * 0.02 + i * headR * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(tx, mouthY - headR * 0.08);
+    ctx.lineTo(tx, mouthY);
+    ctx.stroke();
+  }
+
+  // Mouth outline
+  ctx.beginPath();
+  ctx.ellipse(s * 0.02, mouthY, headR * 0.35, headR * 0.2, 0, 0, Math.PI);
+  ctx.strokeStyle = "#8b1a1a";
+  ctx.lineWidth = s * 0.02;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// --- ARMS ---
+function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft: boolean) {
+  const offsetX = isLeft ? -s * 0.42 : s * 0.42;
+  const shoulderY = -s * 0.35;
+
+  ctx.save();
+  ctx.translate(offsetX, shoulderY);
+  ctx.rotate(angle);
+
+  // Upper arm (skin)
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.045, 0, s * 0.09, s * 0.18, s * 0.04);
+  ctx.fillStyle = "#e8b88a";
+  ctx.fill();
+
+  // Lower arm (skin)
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.04, s * 0.18, s * 0.08, s * 0.16, s * 0.035);
+  ctx.fillStyle = "#f0c89a";
+  ctx.fill();
+
+  // Hand
+  ctx.beginPath();
+  ctx.arc(0, s * 0.36, s * 0.05, 0, Math.PI * 2);
+  ctx.fillStyle = "#f0c89a";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// --- LEGS ---
+function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angle: number) {
+  const hipY = s * 0.15;
+
+  ctx.save();
+  ctx.translate(offsetX, hipY);
+  ctx.rotate(angle);
+
+  // Jeans (dark blue/grey)
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.05, 0, s * 0.1, s * 0.22, s * 0.04);
+  ctx.fillStyle = "#2c3e50";
+  ctx.fill();
+
+  // Lower jeans
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.045, s * 0.18, s * 0.09, s * 0.15, s * 0.03);
+  ctx.fillStyle = "#34495e";
+  ctx.fill();
+
+  // Sneaker
+  const footGrad = ctx.createLinearGradient(0, s * 0.33, 0, s * 0.42);
+  footGrad.addColorStop(0, "#444444");
+  footGrad.addColorStop(1, "#222222");
+  ctx.beginPath();
+  ctx.ellipse(s * 0.02, s * 0.39, s * 0.08, s * 0.05, 0, 0, Math.PI * 2);
+  ctx.fillStyle = footGrad;
+  ctx.fill();
+
+  // Sneaker sole (white stripe)
+  ctx.beginPath();
+  ctx.ellipse(s * 0.02, s * 0.42, s * 0.07, s * 0.02, 0, 0, Math.PI);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// --- SPIN BALL ---
+function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number) {
+  const radius = s * 0.45;
+
+  // Main ball
+  const grad = ctx.createRadialGradient(
+    -radius * 0.2, -radius * 0.2, radius * 0.1,
+    0, 0, radius,
+  );
+  grad.addColorStop(0, "#f5d0a9");
+  grad.addColorStop(0.3, "#8b2252");
+  grad.addColorStop(0.7, "#6b1a3e");
+  grad.addColorStop(1, "#3a0e22");
+
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Spinning lines
+  ctx.save();
+  ctx.rotate(angle);
+  ctx.strokeStyle = "rgba(240, 200, 160, 0.5)";
+  ctx.lineWidth = s * 0.03;
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.7, a, a + 0.8);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Glasses glint on the ball
+  ctx.beginPath();
+  ctx.arc(-radius * 0.15, -radius * 0.15, radius * 0.15, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.fill();
+}
+
+/** Mini procedural preview for character select screen */
 export function drawPedroLucasPreview(
   ctx: CanvasRenderingContext2D,
   cx: number, cy: number,
   size: number,
 ) {
-  if (!sheetReady) return;
-  resolveFrames();
+  const s = size;
 
-  const aspect = frameW / frameH;
-  const w = size * aspect;
-  const h = size;
-  const f = frames.idle;
-  ctx.drawImage(sheetImg, f.sx, f.sy, f.sw, f.sh, cx - w / 2, cy - h / 2, w, h);
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Legs
+  for (const offX of [-s * 0.1, s * 0.1]) {
+    ctx.beginPath();
+    ctx.roundRect(offX - s * 0.035, s * 0.28, s * 0.07, s * 0.16, s * 0.03);
+    ctx.fillStyle = "#2c3e50";
+    ctx.fill();
+    // Sneakers
+    ctx.beginPath();
+    ctx.ellipse(offX + s * 0.01, s * 0.46, s * 0.05, s * 0.03, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#333333";
+    ctx.fill();
+  }
+
+  // Body — maroon top, white bottom
+  const bw = s * 0.28;
+  const bh = s * 0.3;
+  const bodyGrad = ctx.createLinearGradient(0, -s * 0.25, 0, s * 0.15);
+  bodyGrad.addColorStop(0, "#8b2252");
+  bodyGrad.addColorStop(0.55, "#6b1a3e");
+  bodyGrad.addColorStop(0.56, "#f0f0f0");
+  bodyGrad.addColorStop(1, "#e0e0e0");
+  ctx.beginPath();
+  ctx.ellipse(0, s * 0.02, bw, bh, 0, 0, Math.PI * 2);
+  ctx.fillStyle = bodyGrad;
+  ctx.fill();
+
+  // Head
+  const headY = -s * 0.32;
+  const headR = s * 0.22;
+
+  // Skin
+  const skinGrad = ctx.createRadialGradient(-headR * 0.2, headY - headR * 0.2, headR * 0.1, 0, headY, headR);
+  skinGrad.addColorStop(0, "#f5d0a9");
+  skinGrad.addColorStop(0.7, "#e8b88a");
+  skinGrad.addColorStop(1, "#d4976a");
+  ctx.beginPath();
+  ctx.arc(0, headY, headR, 0, Math.PI * 2);
+  ctx.fillStyle = skinGrad;
+  ctx.fill();
+
+  // Hair
+  ctx.beginPath();
+  ctx.arc(0, headY - headR * 0.15, headR * 1.05, Math.PI * 0.85, Math.PI * 0.15, true);
+  ctx.quadraticCurveTo(headR * 0.5, headY - headR * 1.25, 0, headY - headR * 1.15);
+  ctx.quadraticCurveTo(-headR * 0.5, headY - headR * 1.25, -headR * 0.9, headY - headR * 0.1);
+  ctx.closePath();
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fill();
+
+  // Bangs
+  ctx.beginPath();
+  ctx.moveTo(-headR * 0.75, headY - headR * 0.4);
+  ctx.lineTo(-headR * 0.45, headY - headR * 0.2);
+  ctx.lineTo(-headR * 0.15, headY - headR * 0.42);
+  ctx.lineTo(headR * 0.15, headY - headR * 0.18);
+  ctx.lineTo(headR * 0.45, headY - headR * 0.42);
+  ctx.lineTo(headR * 0.75, headY - headR * 0.3);
+  ctx.lineTo(headR * 0.8, headY - headR * 0.7);
+  ctx.quadraticCurveTo(0, headY - headR * 1.3, -headR * 0.8, headY - headR * 0.7);
+  ctx.closePath();
+  ctx.fillStyle = "#222222";
+  ctx.fill();
+
+  // Glasses
+  const glassY = headY + headR * 0.0;
+  const glassW = headR * 0.35;
+  const glassH = headR * 0.28;
+  const bridge = headR * 0.07;
+
+  ctx.lineWidth = s * 0.025;
+  ctx.strokeStyle = "#2a2a2a";
+  ctx.beginPath();
+  ctx.roundRect(-glassW - bridge, glassY - glassH / 2, glassW, glassH, s * 0.02);
+  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(bridge, glassY - glassH / 2, glassW, glassH, s * 0.02);
+  ctx.fillStyle = "rgba(200, 220, 255, 0.3)";
+  ctx.fill();
+  ctx.stroke();
+  // Bridge
+  ctx.beginPath();
+  ctx.moveTo(-bridge, glassY);
+  ctx.lineTo(bridge, glassY);
+  ctx.stroke();
+
+  // Eyes
+  for (const side of [-1, 1]) {
+    const eyeX = side * (bridge + glassW / 2);
+    ctx.beginPath();
+    ctx.arc(eyeX + s * 0.01, glassY + glassH * 0.05, s * 0.025, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(eyeX + s * 0.02, glassY - glassH * 0.05, s * 0.01, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+  }
+
+  // Smile
+  const mouthY = headY + headR * 0.45;
+  ctx.beginPath();
+  ctx.ellipse(s * 0.01, mouthY, headR * 0.28, headR * 0.15, 0, 0, Math.PI);
+  ctx.fillStyle = "#cc3333";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(s * 0.01, mouthY, headR * 0.22, headR * 0.06, 0, 0, Math.PI, true);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  ctx.restore();
 }
