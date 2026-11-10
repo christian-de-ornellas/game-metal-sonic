@@ -9,21 +9,22 @@ const HEAD_RATIO = 0.38;
 const BODY_RATIO = 0.32;
 const LEG_RATIO = 0.30;
 
-// Flat color palette
+// Flat color palette matching reference image
 const COLORS = {
-  skin: "#d4956a",
-  skinLight: "#e8b88a",
+  skin: "#c68642",
+  skinLight: "#d9a066",
+  skinShadow: "#a56b35",
   hair: "#1a1a1a",
-  hairHighlight: "#333333",
-  glassesFrame: "#1a2a5a",
-  glassesLens: "rgba(200,220,255,0.2)",
-  shirtBurgundy: "#8b2252",
+  hairHighlight: "#2a2a2a",
+  glassesFrame: "#2a2a3a",
+  glassesLens: "rgba(200,220,255,0.15)",
+  shirtBurgundy: "#7a1f3d",
   shirtWhite: "#f0f0f0",
   pants: "#2c3548",
   pantsLight: "#3a4560",
-  shoeWhite: "#f0f0f0",
-  shoeSole: "#2c3548",
-  shoeAccent: "#3a4a6a",
+  shoeDark: "#2a2a3a",
+  shoeSole: "#e0e0e0",
+  shoeAccent: "#1a1a2a",
   mouthRed: "#cc3333",
   mouthDark: "#8b1a1a",
   teeth: "#ffffff",
@@ -143,7 +144,7 @@ function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number, ani
   ctx.arc(0, headY, headR, 0, Math.PI * 2);
   fillAndStroke(ctx, s, COLORS.skin);
 
-  // Hair (spiky)
+  // Hair (natural messy style)
   drawHair(ctx, s, headY, headR);
 
   // Glasses (with shake during running)
@@ -166,81 +167,75 @@ function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number, ani
   }
 }
 
-// --- HAIR (spiky with individual spikes) ---
+// --- HAIR (natural messy/tousled style matching reference) ---
 function drawHair(ctx: CanvasRenderingContext2D, s: number, headY: number, headR: number) {
   ctx.save();
 
-  // Hair base covering top of head
+  // Main hair mass covering the top of the head — natural, full coverage
   ctx.beginPath();
-  ctx.arc(0, headY, headR * 1.05, Math.PI * 0.95, Math.PI * 0.05, true);
-  ctx.lineTo(headR * 0.9, headY - headR * 0.3);
-  ctx.lineTo(-headR * 0.9, headY - headR * 0.3);
+  ctx.moveTo(-headR * 0.95, headY + headR * 0.15);
+  // Left side going up
+  ctx.quadraticCurveTo(-headR * 1.05, headY - headR * 0.2, -headR * 0.85, headY - headR * 0.6);
+  // Top-left tuft (subtle bump)
+  ctx.quadraticCurveTo(-headR * 0.75, headY - headR * 0.95, -headR * 0.5, headY - headR * 0.85);
+  // Center-left dip
+  ctx.quadraticCurveTo(-headR * 0.35, headY - headR * 0.78, -headR * 0.2, headY - headR * 0.88);
+  // Center tuft (slightly taller — the main messy tuft)
+  ctx.quadraticCurveTo(-headR * 0.05, headY - headR * 1.08, headR * 0.1, headY - headR * 0.9);
+  // Center-right dip
+  ctx.quadraticCurveTo(headR * 0.2, headY - headR * 0.8, headR * 0.35, headY - headR * 0.88);
+  // Right tuft
+  ctx.quadraticCurveTo(headR * 0.55, headY - headR * 1.0, headR * 0.7, headY - headR * 0.78);
+  // Far right going down
+  ctx.quadraticCurveTo(headR * 0.9, headY - headR * 0.55, headR * 1.0, headY - headR * 0.15);
+  // Right side down
+  ctx.quadraticCurveTo(headR * 1.05, headY + headR * 0.05, headR * 0.95, headY + headR * 0.15);
+  // Close across forehead (hair falls over forehead)
+  ctx.quadraticCurveTo(headR * 0.5, headY - headR * 0.15, 0, headY - headR * 0.2);
+  ctx.quadraticCurveTo(-headR * 0.5, headY - headR * 0.15, -headR * 0.95, headY + headR * 0.15);
   ctx.closePath();
   fillAndStroke(ctx, s, COLORS.hair);
 
-  // Individual spikes
-
-  // Spike 1: center-top, tall
+  // Side hair tuft left (small strand hanging down)
   ctx.beginPath();
-  ctx.moveTo(-headR * 0.15, headY - headR * 0.85);
-  ctx.quadraticCurveTo(-headR * 0.05, headY - headR * 1.45, headR * 0.1, headY - headR * 1.35);
-  ctx.quadraticCurveTo(headR * 0.15, headY - headR * 1.1, headR * 0.2, headY - headR * 0.85);
+  ctx.moveTo(-headR * 0.85, headY - headR * 0.1);
+  ctx.quadraticCurveTo(-headR * 1.05, headY + headR * 0.0, -headR * 0.92, headY + headR * 0.25);
+  ctx.quadraticCurveTo(-headR * 0.85, headY + headR * 0.15, -headR * 0.8, headY + headR * 0.0);
   ctx.closePath();
   fillAndStroke(ctx, s, COLORS.hair);
 
-  // Spike 2: left-top
+  // Side hair tuft right (small strand)
   ctx.beginPath();
-  ctx.moveTo(-headR * 0.45, headY - headR * 0.8);
-  ctx.quadraticCurveTo(-headR * 0.55, headY - headR * 1.3, -headR * 0.3, headY - headR * 1.2);
-  ctx.quadraticCurveTo(-headR * 0.15, headY - headR * 1.05, -headR * 0.1, headY - headR * 0.8);
+  ctx.moveTo(headR * 0.85, headY - headR * 0.1);
+  ctx.quadraticCurveTo(headR * 1.05, headY + headR * 0.0, headR * 0.92, headY + headR * 0.25);
+  ctx.quadraticCurveTo(headR * 0.85, headY + headR * 0.15, headR * 0.8, headY + headR * 0.0);
   ctx.closePath();
   fillAndStroke(ctx, s, COLORS.hair);
 
-  // Spike 3: right-top
+  // Small accent tufts on top for messy texture
+  // Top-left small spike
   ctx.beginPath();
-  ctx.moveTo(headR * 0.2, headY - headR * 0.82);
-  ctx.quadraticCurveTo(headR * 0.35, headY - headR * 1.35, headR * 0.5, headY - headR * 1.15);
-  ctx.quadraticCurveTo(headR * 0.55, headY - headR * 0.95, headR * 0.55, headY - headR * 0.8);
+  ctx.moveTo(-headR * 0.6, headY - headR * 0.82);
+  ctx.quadraticCurveTo(-headR * 0.55, headY - headR * 1.0, -headR * 0.4, headY - headR * 0.92);
+  ctx.quadraticCurveTo(-headR * 0.45, headY - headR * 0.85, -headR * 0.6, headY - headR * 0.82);
   ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.hair);
+  ctx.fillStyle = COLORS.hair;
+  ctx.fill();
 
-  // Spike 4: far right
+  // Top-right small spike
   ctx.beginPath();
-  ctx.moveTo(headR * 0.6, headY - headR * 0.7);
-  ctx.quadraticCurveTo(headR * 1.1, headY - headR * 1.0, headR * 1.05, headY - headR * 0.7);
-  ctx.quadraticCurveTo(headR * 0.95, headY - headR * 0.55, headR * 0.75, headY - headR * 0.5);
+  ctx.moveTo(headR * 0.45, headY - headR * 0.85);
+  ctx.quadraticCurveTo(headR * 0.55, headY - headR * 1.05, headR * 0.65, headY - headR * 0.88);
+  ctx.quadraticCurveTo(headR * 0.6, headY - headR * 0.82, headR * 0.45, headY - headR * 0.85);
   ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.hair);
+  ctx.fillStyle = COLORS.hair;
+  ctx.fill();
 
-  // Spike 5: right side
+  // Subtle highlight for volume
   ctx.beginPath();
-  ctx.moveTo(headR * 0.7, headY - headR * 0.45);
-  ctx.quadraticCurveTo(headR * 1.2, headY - headR * 0.6, headR * 1.1, headY - headR * 0.3);
-  ctx.quadraticCurveTo(headR * 0.95, headY - headR * 0.2, headR * 0.8, headY - headR * 0.15);
-  ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.hair);
-
-  // Spike 6: left side
-  ctx.beginPath();
-  ctx.moveTo(-headR * 0.7, headY - headR * 0.55);
-  ctx.quadraticCurveTo(-headR * 1.15, headY - headR * 0.85, -headR * 1.05, headY - headR * 0.45);
-  ctx.quadraticCurveTo(-headR * 0.9, headY - headR * 0.3, -headR * 0.75, headY - headR * 0.25);
-  ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.hair);
-
-  // Spike 7: diagonal back-right
-  ctx.beginPath();
-  ctx.moveTo(headR * 0.4, headY - headR * 0.75);
-  ctx.quadraticCurveTo(headR * 0.75, headY - headR * 1.2, headR * 0.8, headY - headR * 0.9);
-  ctx.quadraticCurveTo(headR * 0.75, headY - headR * 0.7, headR * 0.6, headY - headR * 0.6);
-  ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.hair);
-
-  // Subtle highlight on center spike
-  ctx.beginPath();
-  ctx.moveTo(-headR * 0.05, headY - headR * 1.0);
-  ctx.quadraticCurveTo(headR * 0.0, headY - headR * 1.25, headR * 0.08, headY - headR * 1.15);
-  ctx.quadraticCurveTo(headR * 0.05, headY - headR * 1.05, headR * 0.02, headY - headR * 0.95);
+  ctx.moveTo(-headR * 0.3, headY - headR * 0.75);
+  ctx.quadraticCurveTo(-headR * 0.1, headY - headR * 0.9, headR * 0.1, headY - headR * 0.75);
+  ctx.quadraticCurveTo(0, headY - headR * 0.65, -headR * 0.3, headY - headR * 0.75);
   ctx.closePath();
   ctx.fillStyle = COLORS.hairHighlight;
   ctx.fill();
@@ -411,9 +406,14 @@ function drawEyes(
       }
       ctx.stroke();
     } else {
-      // Normal / happy eyes: black dots with white highlight
+      // Normal / happy eyes: brown dots with white highlight
       ctx.beginPath();
       ctx.arc(eyeX + s * 0.02, glassY + glassH * 0.05, s * 0.04, 0, Math.PI * 2);
+      ctx.fillStyle = "#3a2518";
+      ctx.fill();
+      // Dark pupil center
+      ctx.beginPath();
+      ctx.arc(eyeX + s * 0.02, glassY + glassH * 0.05, s * 0.025, 0, Math.PI * 2);
       ctx.fillStyle = COLORS.outline;
       ctx.fill();
       // Highlight
@@ -544,7 +544,7 @@ function drawMouth(ctx: CanvasRenderingContext2D, s: number, headY: number, head
     ctx.fillStyle = COLORS.teeth;
     ctx.fill();
   } else {
-    // Normal/happy: big open smile with teeth and outline
+    // Normal/happy: big wide grin showing teeth (matching reference)
     ctx.beginPath();
     ctx.ellipse(s * 0.02, mouthY, headR * 0.35, headR * 0.2, 0, 0, Math.PI);
     ctx.fillStyle = COLORS.mouthRed;
@@ -553,9 +553,9 @@ function drawMouth(ctx: CanvasRenderingContext2D, s: number, headY: number, head
     ctx.lineWidth = s * OUTLINE_W;
     ctx.stroke();
 
-    // Teeth
+    // Teeth (upper row — wide, matching the big grin in reference)
     ctx.beginPath();
-    ctx.ellipse(s * 0.02, mouthY, headR * 0.3, headR * 0.08, 0, 0, Math.PI, true);
+    ctx.ellipse(s * 0.02, mouthY, headR * 0.3, headR * 0.1, 0, 0, Math.PI, true);
     ctx.fillStyle = COLORS.teeth;
     ctx.fill();
 
@@ -565,7 +565,7 @@ function drawMouth(ctx: CanvasRenderingContext2D, s: number, headY: number, head
     for (let i = -2; i <= 2; i++) {
       const tx = s * 0.02 + i * headR * 0.1;
       ctx.beginPath();
-      ctx.moveTo(tx, mouthY - headR * 0.08);
+      ctx.moveTo(tx, mouthY - headR * 0.1);
       ctx.lineTo(tx, mouthY);
       ctx.stroke();
     }
@@ -611,7 +611,7 @@ function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft
   ctx.restore();
 }
 
-// --- LEGS + SNEAKERS ---
+// --- LEGS + DARK SHOES (matching reference) ---
 function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angle: number) {
   const hipY = s * 0.1;
 
@@ -629,23 +629,23 @@ function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angl
   ctx.roundRect(-s * 0.05, s * 0.15, s * 0.1, s * 0.12, s * 0.03);
   fillAndStroke(ctx, s, COLORS.pantsLight);
 
-  // Sneaker
-  drawSneaker(ctx, s);
+  // Shoe (dark with light sole)
+  drawShoe(ctx, s);
 
   ctx.restore();
 }
 
-function drawSneaker(ctx: CanvasRenderingContext2D, s: number) {
+function drawShoe(ctx: CanvasRenderingContext2D, s: number) {
   const shoeTop = s * 0.26;
   const shoeW = s * 0.14;
   const shoeH = s * 0.08;
 
-  // Sole (dark, slightly wider and lower)
+  // Sole (light-colored, slightly wider and lower)
   ctx.beginPath();
   ctx.roundRect(-s * 0.04, shoeTop + shoeH * 0.6, shoeW + s * 0.01, shoeH * 0.5, s * 0.015);
   fillAndStroke(ctx, s, COLORS.shoeSole);
 
-  // Upper (white shoe body with curved toe)
+  // Upper (dark shoe body with curved toe)
   ctx.beginPath();
   ctx.moveTo(-s * 0.04, shoeTop + shoeH * 0.7);
   ctx.lineTo(-s * 0.04, shoeTop);
@@ -653,19 +653,19 @@ function drawSneaker(ctx: CanvasRenderingContext2D, s: number) {
   ctx.quadraticCurveTo(shoeW * 0.7, shoeTop - s * 0.02, shoeW + s * 0.01, shoeTop + shoeH * 0.3);
   ctx.lineTo(shoeW + s * 0.01, shoeTop + shoeH * 0.7);
   ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.shoeWhite);
+  fillAndStroke(ctx, s, COLORS.shoeDark);
 
-  // Accent line on toe cap
+  // Subtle accent line on shoe
   ctx.beginPath();
   ctx.moveTo(s * 0.03, shoeTop + shoeH * 0.1);
   ctx.quadraticCurveTo(shoeW * 0.6, shoeTop, shoeW, shoeTop + shoeH * 0.4);
   ctx.strokeStyle = COLORS.shoeAccent;
-  ctx.lineWidth = s * 0.015;
+  ctx.lineWidth = s * 0.012;
   ctx.lineCap = "round";
   ctx.stroke();
 }
 
-// --- SPIN BALL (cartoon style with hair spikes and glasses) ---
+// --- SPIN BALL (cartoon style with hair tufts and glasses) ---
 function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number, animator: MetalSonicAnimator) {
   const radius = s * 0.45;
 
@@ -683,22 +683,22 @@ function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number, a
   ctx.save();
   ctx.rotate(angle);
 
-  // Hair spikes visible around the ball
-  const spikeCount = 5;
-  for (let i = 0; i < spikeCount; i++) {
-    const a = (i / spikeCount) * Math.PI * 2;
-    const baseR = radius * 0.85;
-    const tipR = radius * 1.2;
-    const sideAngle = 0.25;
+  // Hair tufts visible around the ball (softer than before)
+  const tuftCount = 6;
+  for (let i = 0; i < tuftCount; i++) {
+    const a = (i / tuftCount) * Math.PI * 2;
+    const baseR = radius * 0.88;
+    const tipR = radius * 1.12;
+    const sideAngle = 0.2;
 
     ctx.beginPath();
     ctx.moveTo(Math.cos(a - sideAngle) * baseR, Math.sin(a - sideAngle) * baseR);
     ctx.quadraticCurveTo(
-      Math.cos(a) * tipR * 1.1, Math.sin(a) * tipR * 1.1,
+      Math.cos(a) * tipR * 1.05, Math.sin(a) * tipR * 1.05,
       Math.cos(a) * tipR, Math.sin(a) * tipR,
     );
     ctx.quadraticCurveTo(
-      Math.cos(a) * tipR * 1.1, Math.sin(a) * tipR * 1.1,
+      Math.cos(a) * tipR * 1.05, Math.sin(a) * tipR * 1.05,
       Math.cos(a + sideAngle) * baseR, Math.sin(a + sideAngle) * baseR,
     );
     ctx.closePath();
@@ -750,7 +750,7 @@ export function drawPedroLucasPreview(
   ctx.save();
   ctx.translate(cx, cy);
 
-  // Legs with sneakers
+  // Legs with dark shoes
   for (const offX of [-s * 0.1, s * 0.1]) {
     // Pants
     ctx.beginPath();
@@ -762,16 +762,16 @@ export function drawPedroLucasPreview(
     ctx.lineJoin = "round";
     ctx.stroke();
 
-    // Sneaker upper
+    // Shoe upper (dark)
     ctx.beginPath();
     ctx.roundRect(offX - s * 0.03, s * 0.39, s * 0.1, s * 0.05, s * 0.02);
-    ctx.fillStyle = COLORS.shoeWhite;
+    ctx.fillStyle = COLORS.shoeDark;
     ctx.fill();
     ctx.strokeStyle = COLORS.outline;
     ctx.lineWidth = s * 0.02;
     ctx.stroke();
 
-    // Sneaker sole
+    // Shoe sole (light)
     ctx.beginPath();
     ctx.roundRect(offX - s * 0.03, s * 0.43, s * 0.1, s * 0.025, s * 0.01);
     ctx.fillStyle = COLORS.shoeSole;
@@ -816,11 +816,19 @@ export function drawPedroLucasPreview(
   ctx.lineWidth = s * 0.025;
   ctx.stroke();
 
-  // Hair base
+  // Hair — natural messy style (matching main character)
   ctx.beginPath();
-  ctx.arc(0, headY, headR * 1.05, Math.PI * 0.95, Math.PI * 0.05, true);
-  ctx.lineTo(headR * 0.8, headY - headR * 0.3);
-  ctx.lineTo(-headR * 0.8, headY - headR * 0.3);
+  ctx.moveTo(-headR * 0.95, headY + headR * 0.15);
+  ctx.quadraticCurveTo(-headR * 1.05, headY - headR * 0.2, -headR * 0.85, headY - headR * 0.6);
+  ctx.quadraticCurveTo(-headR * 0.75, headY - headR * 0.95, -headR * 0.5, headY - headR * 0.85);
+  ctx.quadraticCurveTo(-headR * 0.35, headY - headR * 0.78, -headR * 0.2, headY - headR * 0.88);
+  ctx.quadraticCurveTo(-headR * 0.05, headY - headR * 1.08, headR * 0.1, headY - headR * 0.9);
+  ctx.quadraticCurveTo(headR * 0.2, headY - headR * 0.8, headR * 0.35, headY - headR * 0.88);
+  ctx.quadraticCurveTo(headR * 0.55, headY - headR * 1.0, headR * 0.7, headY - headR * 0.78);
+  ctx.quadraticCurveTo(headR * 0.9, headY - headR * 0.55, headR * 1.0, headY - headR * 0.15);
+  ctx.quadraticCurveTo(headR * 1.05, headY + headR * 0.05, headR * 0.95, headY + headR * 0.15);
+  ctx.quadraticCurveTo(headR * 0.5, headY - headR * 0.15, 0, headY - headR * 0.2);
+  ctx.quadraticCurveTo(-headR * 0.5, headY - headR * 0.15, -headR * 0.95, headY + headR * 0.15);
   ctx.closePath();
   ctx.fillStyle = COLORS.hair;
   ctx.fill();
@@ -828,21 +836,12 @@ export function drawPedroLucasPreview(
   ctx.lineWidth = s * 0.02;
   ctx.stroke();
 
-  // Spikes (simplified for preview)
-  const spikes = [
-    { x: 0, y: -1.35, cx: 0.05, cy: -1.5 },
-    { x: -0.35, y: -1.2, cx: -0.4, cy: -1.4 },
-    { x: 0.35, y: -1.15, cx: 0.45, cy: -1.35 },
-    { x: 0.7, y: -0.7, cx: 0.95, cy: -0.95 },
-    { x: -0.65, y: -0.55, cx: -0.9, cy: -0.8 },
-  ];
-  for (const spike of spikes) {
+  // Side tufts
+  for (const side of [-1, 1]) {
     ctx.beginPath();
-    ctx.moveTo(spike.x * headR * 0.6 - headR * 0.1, headY + spike.y * headR * 0.55 + headR * 0.2);
-    ctx.quadraticCurveTo(
-      spike.cx * headR, headY + spike.cy * headR * 0.6,
-      spike.x * headR * 0.6 + headR * 0.1, headY + spike.y * headR * 0.55 + headR * 0.2,
-    );
+    ctx.moveTo(side * headR * 0.85, headY - headR * 0.1);
+    ctx.quadraticCurveTo(side * headR * 1.05, headY + headR * 0.0, side * headR * 0.92, headY + headR * 0.25);
+    ctx.quadraticCurveTo(side * headR * 0.85, headY + headR * 0.15, side * headR * 0.8, headY + headR * 0.0);
     ctx.closePath();
     ctx.fillStyle = COLORS.hair;
     ctx.fill();
