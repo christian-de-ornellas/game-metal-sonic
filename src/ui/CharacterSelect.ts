@@ -12,7 +12,7 @@ interface CharacterEntry {
 
 const CHARACTERS: CharacterEntry[] = [
   { id: "metal_sonic", name: "METAL SONIC", color: "#4488ff" },
-  { id: "pedro_lucas", name: "PEDRO LUCAS", color: "#cc4444" },
+  { id: "pedro_lucas", name: "PEDRO LUCAS", color: "#1560bd" },
 ];
 
 export class CharacterSelect {
