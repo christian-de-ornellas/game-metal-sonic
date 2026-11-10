@@ -48,11 +48,13 @@ export class RoboTinic extends Boss {
     return "ROBO TINIC";
   }
 
-  private getPhaseLevel(): number {
+  getPhaseLevel(): number {
     if (this.hp > 5) return 1;
     if (this.hp > 2) return 2;
     return 3;
   }
+
+  private warningAlarmCooldown = 0;
 
   update(dt: number, playerX: number, _playerY: number) {
     this.updateTimers(dt);
@@ -62,6 +64,15 @@ export class RoboTinic extends Boss {
 
     const phase = this.getPhaseLevel();
     this.smokeAmount = phase === 3 ? 0.8 : phase === 2 ? 0.3 : 0;
+
+    // Phase 3 warning alarm
+    if (phase === 3 && !this.defeated) {
+      this.warningAlarmCooldown -= dt;
+      if (this.warningAlarmCooldown <= 0) {
+        this.emitSound("warningAlarm");
+        this.warningAlarmCooldown = 2.0;
+      }
+    }
 
     if (this.defeated) {
       this.updateDefeat(dt);
@@ -144,6 +155,7 @@ export class RoboTinic extends Boss {
       this.y = 3;
       this.attackState = "grounded";
       this.stateTimer = 0;
+      this.emitSound("bossImpact");
     }
   }
 
@@ -166,6 +178,8 @@ export class RoboTinic extends Boss {
     }
   }
 
+  private laserChargeSoundPlayed = false;
+
   private updateLaserCharge(dt: number, playerX: number) {
     this.stateTimer += dt;
     this.laserAlpha = Math.min(1, this.stateTimer / 0.8);
@@ -175,9 +189,16 @@ export class RoboTinic extends Boss {
     const dx = playerX - this.x;
     this.x += Math.sign(dx) * Math.min(Math.abs(dx), 2 * dt);
 
+    if (!this.laserChargeSoundPlayed) {
+      this.laserChargeSoundPlayed = true;
+      this.emitSound("laserCharge");
+    }
+
     if (this.stateTimer > 0.8) {
       this.attackState = "laser_fire";
       this.stateTimer = 0;
+      this.laserChargeSoundPlayed = false;
+      this.emitSound("laserFire");
     }
   }
 
@@ -201,6 +222,7 @@ export class RoboTinic extends Boss {
         b.vy = 0;
         b.active = true;
         b.explodeTimer = 4;
+        this.emitSound("bombDrop");
         return;
       }
     }

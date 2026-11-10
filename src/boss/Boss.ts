@@ -12,6 +12,14 @@ export abstract class Boss {
   x: number;
   y: number;
 
+  /** Callback for sound events - connected by main.ts to AudioManager */
+  onSoundEvent?: (event: string) => void;
+
+  /** Phase transition tracking */
+  private previousPhaseLevel = 1;
+  private _phaseChanged = false;
+  private _newPhaseLevel = 1;
+
   constructor(maxHp: number, x: number, y: number) {
     this.maxHp = maxHp;
     this.hp = maxHp;
@@ -24,6 +32,7 @@ export abstract class Boss {
 
   takeDamage(): boolean {
     if (!this.isVulnerable()) return false;
+    const oldPhase = this.getPhaseLevel();
     this.hp--;
     this.invulnerableTimer = 1.0;
     this.hitFlashTimer = 0.3;
@@ -32,7 +41,32 @@ export abstract class Boss {
       this.phase = "defeated";
       this.defeated = true;
     }
+    const newPhase = this.getPhaseLevel();
+    if (newPhase !== oldPhase && !this.defeated) {
+      this._phaseChanged = true;
+      this._newPhaseLevel = newPhase;
+      this.previousPhaseLevel = newPhase;
+    }
     return true;
+  }
+
+  /** Consume phase change event. Returns whether phase changed and the new level. */
+  consumePhaseChange(): { changed: boolean; newPhase: number } {
+    if (this._phaseChanged) {
+      this._phaseChanged = false;
+      return { changed: true, newPhase: this._newPhaseLevel };
+    }
+    return { changed: false, newPhase: this.getPhaseLevel() };
+  }
+
+  /** Get current phase level (1, 2, or 3). Override in subclasses. */
+  getPhaseLevel(): number {
+    return 1;
+  }
+
+  /** Emit a sound event through the callback */
+  protected emitSound(event: string) {
+    this.onSoundEvent?.(event);
   }
 
   isVulnerable(): boolean {

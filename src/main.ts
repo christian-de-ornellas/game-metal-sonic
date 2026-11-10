@@ -32,6 +32,7 @@ import { BowserArena } from "./boss/BowserArena";
 import { MarioAlly } from "./boss/MarioAlly";
 import { Boss } from "./boss/Boss";
 import { PlayerProjectileSystem } from "./boss/PlayerProjectile";
+import { BossCinematic } from "./boss/BossCinematic";
 import { EndingCinematic } from "./ui/EndingCinematic";
 import { ROBO_TINIC_SCORE, BOWSER_SCORE, BOSS_DEFEAT_DELAY } from "./constants";
 
@@ -81,6 +82,7 @@ function main() {
   let marioAlly: MarioAlly | null = null;
   const projectiles = new PlayerProjectileSystem();
   let bossDefeatTimer = 0;
+  let bossCinematic: BossCinematic | null = null;
   let endingCinematic: EndingCinematic | null = null;
 
   // Pause menu
@@ -100,7 +102,10 @@ function main() {
       roboTinicArena = null;
       bowserArena = null;
       marioAlly = null;
+      bossCinematic = null;
       endingCinematic = null;
+      audio.stopBossMusic();
+      audio.stopAllBossLoops();
       touchControls.bossMode = false;
       gameWon = false;
     },
@@ -518,10 +523,53 @@ function main() {
 
   // === BOSS BATTLE FUNCTIONS ===
 
+  function wireBossSoundEvents(boss: Boss) {
+    boss.onSoundEvent = (event: string) => {
+      switch (event) {
+        case "bossRoar": audio.bossRoar(); break;
+        case "laserCharge": audio.laserCharge(); break;
+        case "laserFire": audio.laserFire(); break;
+        case "bombDrop": audio.bombDrop(); break;
+        case "bossImpact": audio.bossImpact(); break;
+        case "fireBreath": audio.fireBreath(); break;
+        case "stopFireBreath": audio.stopFireBreath(); break;
+        case "shellSpin": audio.shellSpin(); break;
+        case "stopShellSpin": audio.stopShellSpin(); break;
+        case "hammerThrow": audio.hammerThrow(); break;
+        case "warningAlarm": audio.warningAlarm(); break;
+      }
+    };
+  }
+
+  function createBossCinematic(bossName: string): BossCinematic {
+    const cinematic = new BossCinematic();
+
+    cinematic.onPlaySound = (sound: string) => {
+      switch (sound) {
+        case "bossIntro": audio.bossIntro(); break;
+        case "phaseTransition": audio.phaseTransition(); break;
+        case "bossDefeat": audio.bossDefeat(); break;
+        case "stopBossMusic": audio.stopBossMusic(); audio.stopAllBossLoops(); break;
+      }
+    };
+
+    cinematic.onIntroComplete = () => {
+      audio.startBossMusic(1);
+    };
+
+    cinematic.onPhaseTransitionComplete = () => {
+      // Music intensity already updated at transition start
+    };
+
+    cinematic.startIntro(bossName);
+    return cinematic;
+  }
+
   function startBossRoboTinic() {
     roboTinicArena = new RoboTinicArena();
     const boss = new RoboTinic(roboTinicArena.leftWall, roboTinicArena.rightWall);
     currentBoss = boss;
+    wireBossSoundEvents(boss);
     projectiles.clear();
     bossDefeatTimer = 0;
 
@@ -538,12 +586,15 @@ function main() {
     touchControls.bossMode = true;
     phase = "boss_robo_tinic";
     level = null;
+
+    bossCinematic = createBossCinematic("ROBO TINIC");
   }
 
   function startBossBowser() {
     bowserArena = new BowserArena();
     const boss = new BowserBoss(bowserArena.leftWall, bowserArena.rightWall, bowserArena.groundY);
     currentBoss = boss;
+    wireBossSoundEvents(boss);
     marioAlly = new MarioAlly(-10, bowserArena.groundY);
     projectiles.clear();
     bossDefeatTimer = 0;
@@ -561,10 +612,15 @@ function main() {
     touchControls.bossMode = true;
     phase = "boss_bowser";
     level = null;
+
+    bossCinematic = createBossCinematic("BOWSER");
   }
 
   function startEnding() {
     touchControls.bossMode = false;
+    bossCinematic = null;
+    audio.stopBossMusic();
+    audio.stopAllBossLoops();
     endingCinematic = new EndingCinematic(
       gameState.score,
       gameState.time,
@@ -581,6 +637,7 @@ function main() {
         roboTinicArena = null;
         bowserArena = null;
         marioAlly = null;
+        bossCinematic = null;
         endingCinematic = null;
         gameWon = false;
       },
@@ -590,6 +647,18 @@ function main() {
 
   function updateBossBattle(dt: number) {
     if (!controller || !currentBoss) return;
+
+    // Update cinematic
+    if (bossCinematic && bossCinematic.isActive()) {
+      bossCinematic.update(dt, currentBoss.x, currentBoss.y);
+      const speedMul = bossCinematic.getGameSpeedMultiplier();
+      if (speedMul === 0) {
+        // Fully paused (intro) - only update cinematic, skip gameplay
+        return;
+      }
+      // Apply slow-motion
+      dt *= speedMul;
+    }
 
     gameState.update(dt);
     input.setTouchState(touchControls.getState());
@@ -641,6 +710,13 @@ function main() {
       shakeAmount = 4;
       shakeDuration = 0.15;
       scorePopup.add(projResult.hitX, projResult.hitY + 1, "HIT!");
+
+      // Check for phase transition from projectile hit
+      const phaseChange = currentBoss.consumePhaseChange();
+      if (phaseChange.changed && bossCinematic) {
+        audio.setBossMusicIntensity(phaseChange.newPhase);
+        bossCinematic.startPhaseTransition(phaseChange.newPhase);
+      }
     }
 
     // Player spin attack on boss
@@ -658,6 +734,13 @@ function main() {
       shakeAmount = 5;
       shakeDuration = 0.2;
       scorePopup.add(currentBoss.x, currentBoss.y + 2, "HIT!");
+
+      // Check for phase transition
+      const phaseChange = currentBoss.consumePhaseChange();
+      if (phaseChange.changed && bossCinematic) {
+        audio.setBossMusicIntensity(phaseChange.newPhase);
+        bossCinematic.startPhaseTransition(phaseChange.newPhase);
+      }
     }
 
     // Boss damages player (body collision)
@@ -711,6 +794,12 @@ function main() {
             r: 255, g: 255, b: 100, alpha: 1, alphaEnd: 0,
             gravity: -3, friction: 1,
           });
+
+          const phaseChange = bowser.consumePhaseChange();
+          if (phaseChange.changed && bossCinematic) {
+            audio.setBossMusicIntensity(phaseChange.newPhase);
+            bossCinematic.startPhaseTransition(phaseChange.newPhase);
+          }
         }
 
         if (bowser.checkDamageToPlayer(marioAlly.x, marioAlly.y)) {
@@ -739,27 +828,48 @@ function main() {
     // Boss defeated check
     if (currentBoss.defeated) {
       if (bossDefeatTimer === 0) {
-        // Just defeated: trigger victory
+        // Just defeated: trigger victory + cinematic
         controller.setVictoryMode(true);
         controller.animator.setExpression("excited", 10);
+        if (bossCinematic) {
+          bossCinematic.onDefeatComplete = () => {
+            if (!currentBoss) return;
+            const isRobo = currentBoss instanceof RoboTinic;
+            gameState.bossesDefeated++;
+            gameState.addScore(isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE);
+            scorePopup.add(0, 10, `+${isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE}`);
+
+            if (isRobo) {
+              transition.fadeToBlack(0.5, () => startBossBowser());
+            } else {
+              transition.fadeToBlack(0.8, () => startEnding());
+            }
+            currentBoss = null;
+          };
+          bossCinematic.startDefeat();
+        }
       }
       bossDefeatTimer += dt;
-      const isRobo = currentBoss instanceof RoboTinic;
-      const isDone = isRobo
-        ? (currentBoss as RoboTinic).isDefeatedAnimationDone()
-        : (currentBoss as BowserBoss).isDefeatedAnimationDone();
 
-      if (isDone && bossDefeatTimer > BOSS_DEFEAT_DELAY) {
-        gameState.bossesDefeated++;
-        gameState.addScore(isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE);
-        scorePopup.add(0, 10, `+${isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE}`);
+      // Fallback: if no cinematic, use old behavior
+      if (!bossCinematic || !bossCinematic.isActive()) {
+        const isRobo = currentBoss instanceof RoboTinic;
+        const isDone = isRobo
+          ? (currentBoss as RoboTinic).isDefeatedAnimationDone()
+          : (currentBoss as BowserBoss).isDefeatedAnimationDone();
 
-        if (isRobo) {
-          transition.fadeToBlack(0.5, () => startBossBowser());
-        } else {
-          transition.fadeToBlack(0.8, () => startEnding());
+        if (isDone && bossDefeatTimer > BOSS_DEFEAT_DELAY && currentBoss) {
+          gameState.bossesDefeated++;
+          gameState.addScore(isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE);
+          scorePopup.add(0, 10, `+${isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE}`);
+
+          if (isRobo) {
+            transition.fadeToBlack(0.5, () => startBossBowser());
+          } else {
+            transition.fadeToBlack(0.8, () => startEnding());
+          }
+          currentBoss = null;
         }
-        currentBoss = null;
       }
     }
 
@@ -780,11 +890,22 @@ function main() {
 
     let camX = camera.x;
     let camY = camera.y;
-    if (shakeDuration > 0) {
-      camX += (Math.random() - 0.5) * shakeAmount;
-      camY += (Math.random() - 0.5) * shakeAmount;
+
+    // Apply cinematic shake
+    let totalShake = 0;
+    if (shakeDuration > 0) totalShake += shakeAmount;
+    if (bossCinematic && bossCinematic.isActive()) totalShake += bossCinematic.getShake();
+    if (totalShake > 0) {
+      camX += (Math.random() - 0.5) * totalShake;
+      camY += (Math.random() - 0.5) * totalShake;
     }
-    renderer.setCamera(camX, camY, camera.zoom);
+
+    // Apply cinematic zoom
+    let zoomMultiplier = 1;
+    if (bossCinematic && bossCinematic.isActive()) {
+      zoomMultiplier = bossCinematic.getCameraZoomMultiplier();
+    }
+    renderer.setCamera(camX, camY, camera.zoom * zoomMultiplier);
 
     arena.render(renderer);
 
@@ -823,6 +944,18 @@ function main() {
       ctx.globalAlpha = 1;
     }
 
+    // Cinematic screen flash
+    if (bossCinematic && bossCinematic.isActive()) {
+      const flash = bossCinematic.getScreenFlash();
+      if (flash && flash.alpha > 0.001) {
+        const ctx = renderer.ctx;
+        ctx.globalAlpha = flash.alpha;
+        ctx.fillStyle = `rgb(${flash.r},${flash.g},${flash.b})`;
+        ctx.fillRect(0, 0, renderer.width, renderer.height);
+        ctx.globalAlpha = 1;
+      }
+    }
+
     if (currentBoss) {
       currentBoss.renderHealthBar(renderer);
     }
@@ -831,6 +964,11 @@ function main() {
 
     if (touchControls.isTouchDevice) {
       touchControls.render(renderer);
+    }
+
+    // Cinematic overlay (text, particles, effects) - on top of everything
+    if (bossCinematic && bossCinematic.isActive()) {
+      bossCinematic.render(renderer);
     }
   }
 

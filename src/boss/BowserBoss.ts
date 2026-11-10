@@ -59,7 +59,7 @@ export class BowserBoss extends Boss {
     return "BOWSER";
   }
 
-  private getPhaseLevel(): number {
+  getPhaseLevel(): number {
     if (this.hp > 8) return 1;
     if (this.hp > 4) return 2;
     return 3;
@@ -223,6 +223,7 @@ export class BowserBoss extends Boss {
         this.attack = "rage_roar";
         this.stateTimer = 0;
         this.screenShake = 5;
+        this.emitSound("bossRoar");
       }
     }
     this.attackCooldown = phase === 3 ? 1 : phase === 2 ? 1.5 : 2;
@@ -246,6 +247,7 @@ export class BowserBoss extends Boss {
     this.fireBreathTimer = 0;
     this.fireBreathActive = false;
     this.jawOpen = 0;
+    this.emitSound("bossRoar");
   }
 
   private updateFireBreath(dt: number, playerX: number, playerY: number, phase: number) {
@@ -259,6 +261,9 @@ export class BowserBoss extends Boss {
     }
 
     // Fire phase
+    if (!this.fireBreathActive) {
+      this.emitSound("fireBreath");
+    }
     this.fireBreathActive = true;
     const targetAngle = Math.atan2(playerY - (this.y + 4), playerX - this.x);
     if (phase >= 2) {
@@ -271,6 +276,7 @@ export class BowserBoss extends Boss {
     const duration = phase === 3 ? 2.5 : 2;
     if (this.fireBreathTimer > 0.6 + duration) {
       this.fireBreathActive = false;
+      this.emitSound("stopFireBreath");
       this.attack = "idle";
       this.stateTimer = 0;
       this.jawOpen = 0;
@@ -302,6 +308,7 @@ export class BowserBoss extends Boss {
         this.attack = "ground_pound_land";
         this.stateTimer = 0;
         this.screenShake = 8;
+        this.emitSound("bossImpact");
         // Create shockwave
         this.shockwave = { x: this.x, progress: 0, active: true };
       }
@@ -322,6 +329,7 @@ export class BowserBoss extends Boss {
     this.stateTimer = 0;
     this.shellSpinSpeed = 18;
     this.shellSpinDirection = this.facingRight ? 1 : -1;
+    this.emitSound("shellSpin");
   }
 
   private updateShellSpin(dt: number) {
@@ -341,6 +349,7 @@ export class BowserBoss extends Boss {
     if (this.stateTimer > 3) {
       this.attack = "idle";
       this.stateTimer = 0;
+      this.emitSound("stopShellSpin");
     }
   }
 
@@ -376,6 +385,7 @@ export class BowserBoss extends Boss {
         h.vy = 10 + Math.random() * 4;
         h.rotation = 0;
         h.active = true;
+        this.emitSound("hammerThrow");
         return;
       }
     }
