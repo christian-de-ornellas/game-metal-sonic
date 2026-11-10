@@ -21,7 +21,6 @@ export class TitleScreen {
         e.preventDefault();
         this.start();
       }
-      // Z or Enter for zone select
       if ((e.key === "z" || e.key === "Z" || e.key === "Enter") && this.visible && !this.isGameOver) {
         e.preventDefault();
         this.openZoneSelect();
@@ -51,7 +50,7 @@ export class TitleScreen {
     if (this.started) return;
     this.started = true;
     this.visible = false;
-    this.onStart(0); // Start from zone 0 (Emerald Hill)
+    this.onStart(0);
   }
 
   private openZoneSelect() {
@@ -65,6 +64,14 @@ export class TitleScreen {
     this.visible = true;
     this.isGameOver = true;
     this.started = false;
+  }
+
+  /** Called when returning to title from pause menu */
+  showReturnToTitle() {
+    this.visible = true;
+    this.isGameOver = false;
+    this.started = false;
+    this.time = 0;
   }
 
   update(dt: number) {
@@ -86,7 +93,6 @@ export class TitleScreen {
     const centerY = h / 2;
 
     if (this.isGameOver) {
-      // Game Over text
       ctx.save();
       ctx.shadowColor = "#880000";
       ctx.shadowBlur = 10;
@@ -98,30 +104,27 @@ export class TitleScreen {
       r.drawScreenText("PRESS SPACE TO RETRY", centerX, centerY + 20, "white", 22, "center", "black");
       ctx.globalAlpha = 1;
     } else {
-      // Title
       ctx.save();
       ctx.shadowColor = "#000088";
       ctx.shadowBlur = 15;
       r.drawScreenText("O MUNDO DE PEDRO", centerX, centerY - 100, "#4488ff", 56, "center", "#000066");
       ctx.restore();
 
-      // Blink start text
       const blinkAlpha = 0.5 + Math.sin(this.time * 3) * 0.5;
       ctx.globalAlpha = blinkAlpha;
       r.drawScreenText("PRESS SPACE, CLICK OR TAP TO START", centerX, centerY - 10, "white", 22, "center", "black");
       ctx.globalAlpha = 1;
 
-      // Zone select option
       r.drawScreenText("PRESS Z OR ENTER FOR ZONE SELECT", centerX, centerY + 30, "#88aaff", 18, "center", "black");
 
       // Controls
       r.drawScreenText("ARROWS/WASD: Move  |  SPACE/Z: Jump  |  DOWN + JUMP: Spin Dash", centerX, centerY + 80, "#aaaaaa", 16, "center");
+      r.drawScreenText("ESC/P: Pause", centerX, centerY + 105, "#888888", 14, "center");
 
       // Credits
       r.drawScreenText("Created by Christian Possidonio & Pedro Lucas Possidonio", centerX, h - 60, "#6688bb", 14, "center");
       r.drawScreenText("possidonio.com", centerX, h - 38, "#4488ff", 14, "center");
 
-      // Store link hit area for click detection
       this.canvas = ctx.canvas;
       ctx.font = `14px monospace`;
       const linkW = ctx.measureText("possidonio.com").width;
