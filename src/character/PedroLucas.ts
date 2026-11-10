@@ -133,6 +133,8 @@ export function drawPedroLucas(
   drawNeck(ctx, s);
   drawBody(ctx, s, animator);
   drawShirtTail(ctx, s, animator);
+  drawShoulder(ctx, s, true);
+  drawShoulder(ctx, s, false);
   drawArm(ctx, s, animator.leftArmAngle, true, animator);
   drawArm(ctx, s, animator.rightArmAngle, false, animator);
   drawHead(ctx, s, animator.breathOffset * s * 0.02, animator);
@@ -227,6 +229,23 @@ function drawShirtTail(ctx: CanvasRenderingContext2D, s: number, animator: Metal
   ctx.lineWidth = s * 0.012;
   ctx.lineJoin = "round";
   ctx.stroke();
+}
+
+// --- SHOULDER (connects body to arm) ---
+function drawShoulder(ctx: CanvasRenderingContext2D, s: number, isLeft: boolean) {
+  const side = isLeft ? -1 : 1;
+  const bodyEdgeX = side * s * 0.26;  // body half-width
+  const armX = side * s * 0.44;       // arm pivot
+  const shoulderY = -s * 0.38;
+
+  // Rounded shoulder pad bridging body edge to arm origin
+  const cx = (bodyEdgeX + armX) / 2;
+  const rx = Math.abs(armX - bodyEdgeX) / 2 + s * 0.04; // slightly wider than the gap
+  const ry = s * 0.08;
+
+  ctx.beginPath();
+  ctx.ellipse(cx, shoulderY + s * 0.02, rx, ry, 0, 0, Math.PI * 2);
+  fillAndStroke(ctx, s, COLORS.shirtBurgundy);
 }
 
 // --- HEAD (larger, flat skin, outline) ---
@@ -1158,6 +1177,51 @@ export function drawPedroLucasPreview(
   ctx.lineWidth = s * 0.015;
   ctx.lineCap = "round";
   ctx.stroke();
+
+  // Shoulders + arms on preview
+  for (const side of [-1, 1]) {
+    const bodyEdge = side * bw / 2;
+    const armPivotX = side * s * 0.28;
+    const shoulderCx = (bodyEdge + armPivotX) / 2;
+    const shoulderY = bodyTop + s * 0.04;
+
+    // Shoulder pad
+    ctx.beginPath();
+    ctx.ellipse(shoulderCx, shoulderY, s * 0.06, s * 0.05, 0, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS.shirtBurgundy;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.018;
+    ctx.stroke();
+
+    // Sleeve
+    ctx.beginPath();
+    ctx.roundRect(armPivotX - s * 0.04, shoulderY - s * 0.01, s * 0.08, s * 0.09, s * 0.025);
+    ctx.fillStyle = COLORS.shirtBurgundy;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.015;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Exposed arm (skin)
+    ctx.beginPath();
+    ctx.roundRect(armPivotX - s * 0.035, shoulderY + s * 0.07, s * 0.07, s * 0.08, s * 0.025);
+    ctx.fillStyle = COLORS.skinLight;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.012;
+    ctx.stroke();
+
+    // Hand
+    ctx.beginPath();
+    ctx.arc(armPivotX, shoulderY + s * 0.18, s * 0.035, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS.skin;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.012;
+    ctx.stroke();
+  }
 
   // Head (larger for chibi)
   const headY = -s * 0.36;
