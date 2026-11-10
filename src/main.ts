@@ -85,10 +85,11 @@ function main() {
 
   // Pause menu
   const pauseMenu = new PauseMenu(
-    () => { paused = false; gameState.paused = false; },
+    () => { paused = false; gameState.paused = false; pauseMenu.deactivate(); },
     () => {
       paused = false;
       gameState.paused = false;
+      pauseMenu.deactivate();
       phase = "title";
       gameState.titleScreen = true;
       titleScreen.visible = true;
@@ -124,6 +125,7 @@ function main() {
       paused = true;
       gameState.paused = true;
       pauseMenu.reset();
+      pauseMenu.activate(canvas, audio);
     }
   });
 
@@ -134,6 +136,7 @@ function main() {
       paused = true;
       gameState.paused = true;
       pauseMenu.reset();
+      pauseMenu.activate(canvas, audio);
     }
   });
 
@@ -824,7 +827,7 @@ function main() {
     lastTime = now;
 
     // Resize if needed
-    if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+    if (renderer.width !== window.innerWidth || renderer.height !== window.innerHeight) {
       renderer.resize();
       camera.resize(renderer.width, renderer.height);
     }
@@ -864,6 +867,15 @@ function main() {
     const touchState = touchControls.getState();
     if (touchState.fullscreenTap) {
       tryFullscreen();
+    }
+
+    // Handle pause via touch
+    const isBossPhaseTouch = phase === "boss_robo_tinic" || phase === "boss_bowser";
+    if (touchState.pauseTap && (phase === "playing" || isBossPhaseTouch) && !gameState.gameOver && !paused) {
+      paused = true;
+      gameState.paused = true;
+      pauseMenu.reset();
+      pauseMenu.activate(canvas, audio);
     }
 
     if (phase === "playing" && level && controller && !gameState.gameOver && !paused) {
@@ -1102,28 +1114,32 @@ function main() {
     // Game won overlay (should no longer trigger, but keep as fallback)
     if (gameWon) {
       const ctx = renderer.ctx;
+      const rw = renderer.width;
+      const rh = renderer.height;
+      const scale = Math.min(rw / 800, rh / 600, 1);
+
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-      ctx.fillRect(0, 0, renderer.width, renderer.height);
+      ctx.fillRect(0, 0, rw, rh);
 
       ctx.save();
       ctx.shadowColor = "#ffaa00";
       ctx.shadowBlur = 15;
       renderer.drawScreenText(
         "CONGRATULATIONS!",
-        renderer.width / 2, renderer.height / 2 - 60,
-        "#ffcc00", 48, "center", "#664400"
+        rw / 2, rh / 2 - 60 * scale,
+        "#ffcc00", 48 * scale, "center", "#664400"
       );
       ctx.restore();
 
       renderer.drawScreenText(
         `FINAL SCORE: ${gameState.score}`,
-        renderer.width / 2, renderer.height / 2 + 10,
-        "#ffffff", 32, "center", "black"
+        rw / 2, rh / 2 + 10 * scale,
+        "#ffffff", 32 * scale, "center", "black"
       );
       renderer.drawScreenText(
         "ALL ZONES CLEARED!",
-        renderer.width / 2, renderer.height / 2 + 55,
-        "#44ff44", 24, "center", "#004400"
+        rw / 2, rh / 2 + 55 * scale,
+        "#44ff44", 24 * scale, "center", "#004400"
       );
     }
 

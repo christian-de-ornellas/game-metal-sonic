@@ -3,6 +3,13 @@ export class Renderer {
   ctx: CanvasRenderingContext2D;
   width = 0;
   height = 0;
+  dpr = 1;
+
+  // Safe area insets (CSS pixels)
+  safeTop = 0;
+  safeBottom = 0;
+  safeLeft = 0;
+  safeRight = 0;
 
   // Camera offset (world coords of top-left corner)
   cameraX = 0;
@@ -18,10 +25,34 @@ export class Renderer {
   }
 
   resize() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
-    this.width = this.canvas.width;
-    this.height = this.canvas.height;
+    this.dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    // Set canvas buffer to physical pixels
+    this.canvas.width = Math.round(w * this.dpr);
+    this.canvas.height = Math.round(h * this.dpr);
+
+    // Set CSS size to logical pixels
+    this.canvas.style.width = w + "px";
+    this.canvas.style.height = h + "px";
+
+    // Scale context so all drawing uses logical pixels
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+    // Expose logical dimensions (existing code unchanged)
+    this.width = w;
+    this.height = h;
+
+    this.updateSafeAreaInsets();
+  }
+
+  private updateSafeAreaInsets() {
+    const style = getComputedStyle(document.documentElement);
+    this.safeTop = parseFloat(style.getPropertyValue("--sai-top")) || 0;
+    this.safeBottom = parseFloat(style.getPropertyValue("--sai-bottom")) || 0;
+    this.safeLeft = parseFloat(style.getPropertyValue("--sai-left")) || 0;
+    this.safeRight = parseFloat(style.getPropertyValue("--sai-right")) || 0;
   }
 
   setCamera(x: number, y: number, zoom: number) {
@@ -62,7 +93,10 @@ export class Renderer {
   }
 
   clear() {
-    this.ctx.clearRect(0, 0, this.width, this.height);
+    // Reset to identity to clear the full physical canvas, then restore scale
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
   }
 
   /** Fill entire screen with a color */

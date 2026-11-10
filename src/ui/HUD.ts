@@ -29,6 +29,12 @@ export class HUD {
     const pad = isSmall ? 10 : 20;
     const dt = 1 / 60;
 
+    // Safe area offsets
+    const safeLeft = r.safeLeft;
+    const safeRight = r.safeRight;
+    const safeTop = r.safeTop;
+    const safeBottom = r.safeBottom;
+
     // Detect changes and trigger pulses
     if (gs.rings !== this.prevRings) {
       this.ringPulse = 1;
@@ -59,19 +65,19 @@ export class HUD {
       ctx.shadowBlur = 8;
       r.drawScreenText(
         this.zoneName,
-        w / 2 + slideOffset, pad + fontSize + 30,
+        w / 2 + slideOffset, safeTop + pad + fontSize + 30,
         "#4488ff", isSmall ? 24 : 36, "center", "#000044"
       );
       ctx.restore();
       ctx.globalAlpha = 1;
     }
 
-    // SCORE (top-left) with pulse
+    // SCORE (top-left) with pulse — offset by safe area
     const scoreScale = 1 + this.scorePulse * 0.15;
     const scoreSize = fontSize * scoreScale;
     r.drawScreenText(
       `SCORE: ${gs.score}`,
-      pad, pad,
+      safeLeft + pad, safeTop + pad,
       this.scorePulse > 0.5 ? "#ffee88" : "white",
       scoreSize, "left", "black",
     );
@@ -81,49 +87,49 @@ export class HUD {
     const secs = Math.floor(gs.time % 60);
     r.drawScreenText(
       `TIME: ${mins}:${secs.toString().padStart(2, "0")}`,
-      pad, pad + fontSize + 8,
+      safeLeft + pad, safeTop + pad + fontSize + 8,
       "white", fontSize, "left", "black",
     );
 
-    // RINGS (top-right) with pulse
+    // RINGS (top-right) with pulse — offset by safe area
     const ringScale = 1 + this.ringPulse * 0.2;
     const ringSize = fontSize * ringScale;
     const ringColor = gs.rings === 0 ? "#ff4444" :
                       this.ringPulse > 0.5 ? "#ffdd44" : "white";
     r.drawScreenText(
       `RINGS: ${gs.rings}`,
-      w - pad, pad,
+      w - safeRight - pad, safeTop + pad,
       ringColor, ringSize, "right", "black",
     );
 
     // LIVES (below rings)
     r.drawScreenText(
       `LIVES: ${Math.max(gs.lives, 0)}`,
-      w - pad, pad + fontSize + 8,
+      w - safeRight - pad, safeTop + pad + fontSize + 8,
       "white", fontSize, "right", "black",
     );
 
-    // Speed indicator (bottom center) — hide on very small screens
+    // Speed indicator (bottom center) — offset by safe area bottom
     if (speed > 2 && !isSmall) {
       const bars = Math.min(Math.floor(speed / 1.5), 10);
       const speedText = "\u2588".repeat(bars) + ` ${speed.toFixed(1)}`;
       r.drawScreenText(
         speedText,
-        w / 2, r.height - pad - fontSize,
+        w / 2, r.height - safeBottom - pad - fontSize,
         "#88ccff", fontSize * 0.8, "center", "black",
       );
     }
 
-    // Progress bar (bottom of screen)
-    this.renderProgressBar(r, playerX, pad);
+    // Progress bar (bottom of screen) — offset by safe area bottom
+    this.renderProgressBar(r, playerX, pad, safeBottom);
   }
 
-  private renderProgressBar(r: Renderer, playerX: number, pad: number) {
+  private renderProgressBar(r: Renderer, playerX: number, pad: number, safeBottom: number) {
     const ctx = r.ctx;
     const barW = Math.min(200, r.width * 0.35);
     const barH = 6;
     const barX = r.width / 2 - barW / 2;
-    const barY = r.height - pad / 2 - barH;
+    const barY = r.height - safeBottom - pad / 2 - barH;
     const progress = Math.max(0, Math.min(1, playerX / LEVEL_LENGTH));
 
     // Background

@@ -11,6 +11,7 @@ export interface TouchState {
   spinDashPressed: boolean;
   spinDashReleased: boolean;
   fullscreenTap: boolean;
+  pauseTap: boolean;
   attack: boolean;
   attackPressed: boolean;
 }
@@ -35,6 +36,7 @@ export class TouchControls {
     jump: TouchButton;
     spinDash: TouchButton;
     fullscreen: TouchButton;
+    pause: TouchButton;
     attack: TouchButton;
   };
   private prevJump = false;
@@ -42,6 +44,9 @@ export class TouchControls {
   private prevAttack = false;
   private activeTouches: Map<number, { x: number; y: number }> = new Map();
   private fullscreenTapped = false;
+  private pauseTapped = false;
+  // Track which buttons were pressed on previous update for haptic edge detection
+  private prevButtonStates: Set<string> = new Set();
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -54,6 +59,7 @@ export class TouchControls {
       jump: { x: 0, y: 0, radius: r, label: "A", pressed: false, color: "rgba(80,180,255," },
       spinDash: { x: 0, y: 0, radius: r, label: "S", pressed: false, color: "rgba(255,160,40," },
       fullscreen: { x: 0, y: 0, radius: r * 0.5, label: "\u26F6", pressed: false },
+      pause: { x: 0, y: 0, radius: r * 0.5, label: "\u23F8", pressed: false },
       attack: { x: 0, y: 0, radius: r, label: "\uD83D\uDD25", pressed: false, color: "rgba(255,80,40," },
     };
 
@@ -91,11 +97,18 @@ export class TouchControls {
   }
 
   private updateButtonStates() {
+    // Save previous pressed set for haptic edge detection
+    const prevPressed = new Set<string>();
+    for (const [key, btn] of Object.entries(this.buttons)) {
+      if (btn.pressed) prevPressed.add(key);
+    }
+
     // Reset all
     for (const btn of Object.values(this.buttons)) {
       btn.pressed = false;
     }
     this.fullscreenTapped = false;
+    this.pauseTapped = false;
 
     const rect = this.canvas.getBoundingClientRect();
 
@@ -110,14 +123,21 @@ export class TouchControls {
         if (dx * dx + dy * dy <= hitRadius * hitRadius) {
           btn.pressed = true;
           if (key === "fullscreen") this.fullscreenTapped = true;
+          if (key === "pause") this.pauseTapped = true;
         }
       }
     }
 
-    // Haptic feedback on new presses
-    if (this.buttons.jump.pressed || this.buttons.spinDash.pressed || this.buttons.attack.pressed) {
-      this.vibrate(15);
+    // Haptic feedback only on NEW presses (not continuous)
+    const hapticButtons = ["jump", "spinDash", "attack", "pause"];
+    for (const key of hapticButtons) {
+      if ((this.buttons as any)[key].pressed && !prevPressed.has(key)) {
+        this.vibrate(15);
+        break; // One vibration per event is enough
+      }
     }
+
+    this.prevButtonStates = prevPressed;
   }
 
   private vibrate(ms: number) {
@@ -152,6 +172,7 @@ export class TouchControls {
       spinDashPressed,
       spinDashReleased,
       fullscreenTap: this.fullscreenTapped,
+      pauseTap: this.pauseTapped,
       attack,
       attackPressed,
     };
@@ -165,10 +186,16 @@ export class TouchControls {
     const h = r.height;
     const baseRadius = Math.min(w, h) * 0.09;
 
-    // Recalculate button positions based on current screen size
+    // Safe area offsets
+    const safeLeft = r.safeLeft;
+    const safeRight = r.safeRight;
+    const safeTop = r.safeTop;
+    const safeBottom = r.safeBottom;
+
+    // Recalculate button positions based on current screen size + safe area
     const margin = baseRadius * 1.3;
-    const dpadCenterX = margin + baseRadius;
-    const dpadCenterY = h - margin - baseRadius;
+    const dpadCenterX = safeLeft + margin + baseRadius;
+    const dpadCenterY = h - safeBottom - margin - baseRadius;
 
     this.buttons.left.x = dpadCenterX - baseRadius * 1.5;
     this.buttons.left.y = dpadCenterY;
@@ -183,19 +210,24 @@ export class TouchControls {
     this.buttons.down.radius = baseRadius;
 
     // Jump button (right side, bottom)
-    this.buttons.jump.x = w - margin - baseRadius;
-    this.buttons.jump.y = h - margin - baseRadius;
+    this.buttons.jump.x = w - safeRight - margin - baseRadius;
+    this.buttons.jump.y = h - safeBottom - margin - baseRadius;
     this.buttons.jump.radius = baseRadius * 1.3;
 
     // Spin dash button (right side, above jump)
-    this.buttons.spinDash.x = w - margin - baseRadius * 2.8;
-    this.buttons.spinDash.y = h - margin - baseRadius * 0.6;
+    this.buttons.spinDash.x = w - safeRight - margin - baseRadius * 2.8;
+    this.buttons.spinDash.y = h - safeBottom - margin - baseRadius * 0.6;
     this.buttons.spinDash.radius = baseRadius;
 
-    // Fullscreen button (top right)
-    this.buttons.fullscreen.x = w - 30;
-    this.buttons.fullscreen.y = 30;
+    // Fullscreen button (top right, respecting safe area)
+    this.buttons.fullscreen.x = w - safeRight - 30;
+    this.buttons.fullscreen.y = safeTop + 30;
     this.buttons.fullscreen.radius = 18;
+
+    // Pause button (top left, respecting safe area)
+    this.buttons.pause.x = safeLeft + 30;
+    this.buttons.pause.y = safeTop + 30;
+    this.buttons.pause.radius = 18;
 
     ctx.save();
     ctx.textAlign = "center";
@@ -212,8 +244,8 @@ export class TouchControls {
 
     // Attack button (only in boss mode)
     if (this.bossMode) {
-      this.buttons.attack.x = w - margin - baseRadius * 4.6;
-      this.buttons.attack.y = h - margin - baseRadius * 1.8;
+      this.buttons.attack.x = w - safeRight - margin - baseRadius * 4.6;
+      this.buttons.attack.y = h - safeBottom - margin - baseRadius * 1.8;
       this.buttons.attack.radius = baseRadius;
       this.drawButton(ctx, this.buttons.attack);
     } else {
@@ -231,6 +263,16 @@ export class TouchControls {
     ctx.fillStyle = "rgba(255,255,255,0.5)";
     ctx.font = `${fs.radius * 0.9}px sans-serif`;
     ctx.fillText("\u26F6", fs.x, fs.y);
+
+    // Pause button (smaller, subtle)
+    const ps = this.buttons.pause;
+    ctx.beginPath();
+    ctx.arc(ps.x, ps.y, ps.radius, 0, Math.PI * 2);
+    ctx.fillStyle = ps.pressed ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.15)";
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = `${ps.radius * 0.9}px sans-serif`;
+    ctx.fillText("\u23F8", ps.x, ps.y);
 
     ctx.restore();
   }

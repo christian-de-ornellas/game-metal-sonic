@@ -19,10 +19,16 @@ export class AudioManager {
 
   private ensure() {
     if (this.ctx) return;
-    this.ctx = new AudioContext();
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = this._muted ? 0 : this._volume;
-    this.masterGain.connect(this.ctx.destination);
+    try {
+      this.ctx = new AudioContext();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = this._muted ? 0 : this._volume;
+      this.masterGain.connect(this.ctx.destination);
+    } catch {
+      // AudioContext not available (e.g. blocked by browser policy)
+      this.ctx = null;
+      this.masterGain = null;
+    }
   }
 
   /** Resume AudioContext after user gesture */
@@ -31,10 +37,16 @@ export class AudioManager {
     if (this.ctx?.state === "suspended") this.ctx.resume();
   }
 
+  /** Check if audio is available */
+  private get ready() {
+    return this.ctx !== null && this.masterGain !== null;
+  }
+
   // ---- Sound Effects ----
 
   jump() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const g = this.makeGain(0.25, 0.15);
     const o = c.createOscillator();
@@ -48,6 +60,7 @@ export class AudioManager {
 
   ring() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.15, 0.2);
@@ -62,6 +75,7 @@ export class AudioManager {
 
   spinDashCharge() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const g = this.makeGain(0.15, 0.1);
     const o = c.createOscillator();
@@ -75,6 +89,7 @@ export class AudioManager {
 
   spinDashRelease() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.3, 0.3);
@@ -90,6 +105,7 @@ export class AudioManager {
 
   enemyDestroy() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.2, 0.3);
@@ -107,6 +123,7 @@ export class AudioManager {
 
   spring() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.2, 0.25);
@@ -122,6 +139,7 @@ export class AudioManager {
 
   damage() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.3, 0.4);
@@ -137,6 +155,7 @@ export class AudioManager {
 
   lifeUp() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.25, 0.6);
@@ -153,6 +172,7 @@ export class AudioManager {
 
   actClear() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.2, 1.5);
@@ -170,6 +190,7 @@ export class AudioManager {
 
   gameOver() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.25, 1.2);
@@ -187,6 +208,7 @@ export class AudioManager {
 
   bumper() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.2, 0.15);
@@ -202,6 +224,7 @@ export class AudioManager {
 
   checkpoint() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.2, 0.4);
@@ -216,6 +239,7 @@ export class AudioManager {
 
   menuSelect() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const g = this.makeGain(0.12, 0.1);
     const o = c.createOscillator();
@@ -228,6 +252,7 @@ export class AudioManager {
 
   menuConfirm() {
     this.ensure();
+    if (!this.ready) return;
     const c = this.ctx!;
     const t = c.currentTime;
     const g = this.makeGain(0.15, 0.2);

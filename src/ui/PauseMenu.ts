@@ -7,6 +7,12 @@ export class PauseMenu {
   private onResume: () => void;
   private onQuit: () => void;
 
+  // Touch/click interaction
+  private canvas: HTMLCanvasElement | null = null;
+  private audio: AudioManager | null = null;
+  private itemRects: { x: number; y: number; w: number; h: number }[] = [];
+  private boundHandlePointer: ((e: MouseEvent | TouchEvent) => void) | null = null;
+
   constructor(onResume: () => void, onQuit: () => void) {
     this.onResume = onResume;
     this.onQuit = onQuit;
@@ -14,6 +20,50 @@ export class PauseMenu {
 
   reset() {
     this.selectedIndex = 0;
+  }
+
+  activate(canvas: HTMLCanvasElement, audio: AudioManager) {
+    this.canvas = canvas;
+    this.audio = audio;
+    this.deactivate(); // remove any stale listener
+
+    this.boundHandlePointer = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      let cx: number, cy: number;
+      if ("touches" in e && e.changedTouches.length > 0) {
+        const t = e.changedTouches[0];
+        const rect = canvas.getBoundingClientRect();
+        cx = t.clientX - rect.left;
+        cy = t.clientY - rect.top;
+      } else if ("clientX" in e) {
+        const rect = canvas.getBoundingClientRect();
+        cx = (e as MouseEvent).clientX - rect.left;
+        cy = (e as MouseEvent).clientY - rect.top;
+      } else {
+        return;
+      }
+
+      for (let i = 0; i < this.itemRects.length; i++) {
+        const r = this.itemRects[i];
+        if (cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h) {
+          this.audio?.menuConfirm();
+          if (i === 0) this.onResume();
+          else this.onQuit();
+          return;
+        }
+      }
+    };
+
+    canvas.addEventListener("touchend", this.boundHandlePointer, { passive: false });
+    canvas.addEventListener("click", this.boundHandlePointer);
+  }
+
+  deactivate() {
+    if (this.canvas && this.boundHandlePointer) {
+      this.canvas.removeEventListener("touchend", this.boundHandlePointer);
+      this.canvas.removeEventListener("click", this.boundHandlePointer);
+      this.boundHandlePointer = null;
+    }
   }
 
   handleKey(key: string, audio?: AudioManager) {
@@ -52,7 +102,8 @@ export class PauseMenu {
     r.drawScreenText("PAUSED", centerX, h * 0.3, "#4488ff", 48, "center", "#000044");
     ctx.restore();
 
-    // Menu items
+    // Menu items — store rects for hit-testing
+    this.itemRects = [];
     const startY = h * 0.48;
     const itemGap = 50;
     for (let i = 0; i < this.items.length; i++) {
@@ -62,11 +113,21 @@ export class PauseMenu {
       const size = isSelected ? 28 : 22;
       const prefix = isSelected ? "> " : "  ";
       r.drawScreenText(prefix + this.items[i], centerX, y, color, size, "center", "black");
+
+      // Store hit rect for touch (generous area around text)
+      const itemW = 300;
+      const itemH = 44;
+      this.itemRects.push({
+        x: centerX - itemW / 2,
+        y: y - 4,
+        w: itemW,
+        h: itemH,
+      });
     }
 
     // Controls hint
     r.drawScreenText(
-      "UP/DOWN: Navigate  |  SPACE/ENTER: Select  |  ESC: Resume",
+      "UP/DOWN: Navigate  |  SPACE/ENTER/TAP: Select  |  ESC: Resume",
       centerX, h - 40,
       "#666666", 14, "center",
     );

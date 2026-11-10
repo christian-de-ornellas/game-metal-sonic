@@ -24,6 +24,7 @@ export class InputManager {
     jump: false, jumpPressed: false, jumpReleased: false,
     spinDash: false, spinDashPressed: false, spinDashReleased: false,
     fullscreenTap: false,
+    pauseTap: false,
     attack: false, attackPressed: false,
   };
   private pausePressed = false;
