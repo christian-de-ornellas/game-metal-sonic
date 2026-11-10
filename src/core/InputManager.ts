@@ -9,16 +9,25 @@ export interface InputState {
   jumpPressed: boolean;
   jumpReleased: boolean;
   spin: boolean;
+  pause: boolean;
+  attack: boolean;
+  attackPressed: boolean;
 }
 
 export class InputManager {
   private keys: Map<string, boolean> = new Map();
   private prevJump = false;
+  private prevAttack = false;
   private gamepadIndex: number | null = null;
   private touchState: TouchState = {
     left: false, right: false, down: false,
     jump: false, jumpPressed: false, jumpReleased: false,
+    spinDash: false, spinDashPressed: false, spinDashReleased: false,
+    fullscreenTap: false,
+    attack: false, attackPressed: false,
   };
+  private pausePressed = false;
+  private prevPause = false;
 
   constructor() {
     window.addEventListener("keydown", (e) => {
@@ -74,15 +83,37 @@ export class InputManager {
     const jumpPressed = kbJumpPressed || this.touchState.jumpPressed;
     const jumpReleased = kbJumpReleased || this.touchState.jumpReleased;
 
+    // Touch spin dash button: acts as down + jumpPressed simultaneously
+    const touchSpinDash = this.touchState.spinDash;
+    const touchSpinDashPressed = this.touchState.spinDashPressed;
+    if (touchSpinDash) down = true;
+
+    // Attack (X or C key, gamepad button 2, or touch attack)
+    let attack = this.isDown("x") || this.isDown("c") || this.touchState.attack;
+    if (this.gamepadIndex !== null) {
+      const gp = navigator.getGamepads()[this.gamepadIndex];
+      if (gp && gp.buttons[2]?.pressed) attack = true;
+    }
+    const attackPressed = (attack && !this.prevAttack) || this.touchState.attackPressed;
+    this.prevAttack = attack;
+
+    // Pause detection (edge only)
+    const pauseDown = this.isDown("escape") || this.isDown("p");
+    this.pausePressed = pauseDown && !this.prevPause;
+    this.prevPause = pauseDown;
+
     return {
       left,
       right,
       up,
       down,
-      jump,
-      jumpPressed,
+      jump: jump || touchSpinDash,
+      jumpPressed: jumpPressed || touchSpinDashPressed,
       jumpReleased,
-      spin: down && jumpPressed,
+      spin: (down && jumpPressed) || touchSpinDashPressed,
+      pause: this.pausePressed,
+      attack,
+      attackPressed,
     };
   }
 }

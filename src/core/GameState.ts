@@ -13,6 +13,8 @@ export class GameState {
   shield = false;
   zoneIndex = 0;
   actClearPending = false;
+  bossesDefeated = 0;
+  totalRingsCollected = 0;
 
   // Checkpoint
   private checkpointX = 5;
@@ -21,6 +23,7 @@ export class GameState {
   addRings(count: number) {
     this.rings += count;
     this.score += count * 10;
+    this.totalRingsCollected += count;
     if (this.rings >= 100) {
       this.rings -= 100;
       this.lives++;
@@ -80,6 +83,8 @@ export class GameState {
     this.actClearPending = false;
     this.checkpointX = 5;
     this.checkpointY = 2;
+    this.bossesDefeated = 0;
+    this.totalRingsCollected = 0;
   }
 
   update(dt: number) {

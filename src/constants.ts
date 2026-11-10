@@ -59,3 +59,13 @@ export const FLASHER_INVULNERABLE_DURATION = 1.5;
 // Gimmicks
 export const BUMPER_POWER = 12;
 export const FLIPPER_POWER = 18;
+
+// Boss battles
+export const BOSS_ARENA_WIDTH = 60;
+export const BOSS_ARENA_GROUND_Y = 0;
+export const ROBO_TINIC_HP = 8;
+export const ROBO_TINIC_SCORE = 10000;
+export const BOWSER_HP = 12;
+export const BOWSER_SCORE = 20000;
+export const BOSS_HIT_INVULN_TIME = 1.0;
+export const BOSS_DEFEAT_DELAY = 2.0;
