@@ -1,0 +1,107 @@
+import { Renderer } from "../core/Renderer";
+
+export class TitleScreen {
+  visible = true;
+  private onStart: (zoneIndex: number) => void;
+  private onZoneSelect: () => void;
+  private time = 0;
+  private isGameOver = false;
+  private started = false;
+
+  constructor(onStart: (zoneIndex: number) => void, onZoneSelect: () => void) {
+    this.onStart = onStart;
+    this.onZoneSelect = onZoneSelect;
+
+    window.addEventListener("keydown", (e) => {
+      if (!this.visible) return;
+
+      if (e.key === " " && this.visible) {
+        e.preventDefault();
+        this.start();
+      }
+      // Z or Enter for zone select
+      if ((e.key === "z" || e.key === "Z" || e.key === "Enter") && this.visible && !this.isGameOver) {
+        e.preventDefault();
+        this.openZoneSelect();
+      }
+    });
+
+    window.addEventListener("click", () => {
+      if (this.visible) {
+        this.start();
+      }
+    });
+  }
+
+  private start() {
+    if (this.started) return;
+    this.started = true;
+    this.visible = false;
+    this.onStart(0); // Start from zone 0 (Emerald Hill)
+  }
+
+  private openZoneSelect() {
+    if (this.started) return;
+    this.started = true;
+    this.visible = false;
+    this.onZoneSelect();
+  }
+
+  showGameOver() {
+    this.visible = true;
+    this.isGameOver = true;
+    this.started = false;
+  }
+
+  update(dt: number) {
+    this.time += dt;
+  }
+
+  render(r: Renderer) {
+    if (!this.visible) return;
+
+    const ctx = r.ctx;
+    const w = r.width;
+    const h = r.height;
+
+    // Dark overlay
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0, 0, w, h);
+
+    const centerX = w / 2;
+    const centerY = h / 2;
+
+    if (this.isGameOver) {
+      // Game Over text
+      ctx.save();
+      ctx.shadowColor = "#880000";
+      ctx.shadowBlur = 10;
+      r.drawScreenText("GAME OVER", centerX, centerY - 60, "#ff4444", 56, "center", "#440000");
+      ctx.restore();
+
+      const blinkAlpha = 0.5 + Math.sin(this.time * 3) * 0.5;
+      ctx.globalAlpha = blinkAlpha;
+      r.drawScreenText("PRESS SPACE TO RETRY", centerX, centerY + 20, "white", 22, "center", "black");
+      ctx.globalAlpha = 1;
+    } else {
+      // Title
+      ctx.save();
+      ctx.shadowColor = "#000088";
+      ctx.shadowBlur = 15;
+      r.drawScreenText("METAL SONIC 2D", centerX, centerY - 100, "#4488ff", 56, "center", "#000066");
+      ctx.restore();
+
+      // Blink start text
+      const blinkAlpha = 0.5 + Math.sin(this.time * 3) * 0.5;
+      ctx.globalAlpha = blinkAlpha;
+      r.drawScreenText("PRESS SPACE OR CLICK TO START", centerX, centerY - 10, "white", 22, "center", "black");
+      ctx.globalAlpha = 1;
+
+      // Zone select option
+      r.drawScreenText("PRESS Z OR ENTER FOR ZONE SELECT", centerX, centerY + 30, "#88aaff", 18, "center", "black");
+
+      // Controls
+      r.drawScreenText("ARROWS/WASD: Move  |  SPACE/Z: Jump  |  DOWN + JUMP: Spin Dash", centerX, centerY + 80, "#aaaaaa", 16, "center");
+    }
+  }
+}
