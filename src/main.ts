@@ -961,7 +961,7 @@ function main() {
     }
   }
 
-  function renderBossBattle() {
+  function renderBossBattle(dt: number) {
     if (!controller) return;
 
     const arena = phase === "boss_robo_tinic" ? roboTinicArena : bowserArena;
@@ -1329,7 +1329,7 @@ function main() {
       endingCinematic.render(renderer);
     } else if ((phase === "boss_robo_tinic" || phase === "boss_bowser") && controller) {
       // Boss battle render
-      renderBossBattle();
+      renderBossBattle(dt);
     } else if (level && controller) {
       // Apply camera (with shake)
       let camX = camera.x;
