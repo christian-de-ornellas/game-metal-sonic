@@ -1,7 +1,8 @@
 import { Renderer } from "../core/Renderer";
 import { drawPedroLucasPreview } from "../character/PedroLucas";
+import { drawChristianPreview } from "../character/Christian";
 
-export type CharacterChoice = "metal_sonic" | "pedro_lucas";
+export type CharacterChoice = "metal_sonic" | "pedro_lucas" | "christian";
 type PendingAction = "start" | "zone_select";
 
 interface CharacterEntry {
@@ -13,6 +14,7 @@ interface CharacterEntry {
 const CHARACTERS: CharacterEntry[] = [
   { id: "metal_sonic", name: "METAL SONIC", color: "#4488ff" },
   { id: "pedro_lucas", name: "PEDRO LUCAS", color: "#1560bd" },
+  { id: "christian", name: "CHRISTIAN", color: "#C4161C" },
 ];
 
 export class CharacterSelect {
@@ -176,6 +178,8 @@ export class CharacterSelect {
       // Draw character preview
       if (char.id === "metal_sonic") {
         this.drawMetalSonicPreview(ctx, cx, slotY, slotSize * 0.6);
+      } else if (char.id === "christian") {
+        drawChristianPreview(ctx, cx, slotY, slotSize * 0.75);
       } else {
         drawPedroLucasPreview(ctx, cx, slotY, slotSize * 0.75);
       }

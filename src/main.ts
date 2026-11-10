@@ -7,6 +7,7 @@ import { Camera2D } from "./camera/Camera2D";
 import { MetalSonicController, SonicState } from "./character/MetalSonicController";
 import { drawMetalSonic } from "./character/MetalSonic";
 import { drawPedroLucas } from "./character/PedroLucas";
+import { drawChristian } from "./character/Christian";
 import { HUD } from "./ui/HUD";
 import { TitleScreen } from "./ui/TitleScreen";
 import { ZoneSelect } from "./ui/ZoneSelect";
@@ -1002,7 +1003,7 @@ function main() {
     const invincibilityFlicker = gameState.invincible ?
       Math.sin(gameState.invincibilityTimer * 15) > 0 : true;
     const bossSuperFade = gameState.superFormFadeOut > 0 ? gameState.superFormFadeOut / 1.5 : 0;
-    const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : drawMetalSonic;
+    const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : selectedCharacter === "christian" ? drawChristian : drawMetalSonic;
     drawCharacter(
       renderer,
       controller.x,
@@ -1354,7 +1355,7 @@ function main() {
         Math.sin(gameState.invincibilityTimer * 15) > 0 : true;
       const superFade = gameState.superFormFadeOut > 0 ? gameState.superFormFadeOut / 1.5 : 0;
 
-      const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : drawMetalSonic;
+      const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : selectedCharacter === "christian" ? drawChristian : drawMetalSonic;
       drawCharacter(
         renderer,
         controller.x,
