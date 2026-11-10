@@ -33,8 +33,20 @@ export class Camera2D {
 
   private updateBaseZoom() {
     // Base zoom so that ~20 world units fit vertically
-    this.baseZoom = this.screenHeight / 20;
-    this.minZoom = this.screenHeight / 36;
+    // On very small screens (phones), zoom out a bit more to show more of the level
+    const isSmallScreen = Math.min(this.screenWidth, this.screenHeight) < 420;
+    const verticalUnits = isSmallScreen ? 22 : 20;
+    const minVerticalUnits = isSmallScreen ? 40 : 36;
+
+    this.baseZoom = this.screenHeight / verticalUnits;
+    this.minZoom = this.screenHeight / minVerticalUnits;
+
+    // On very wide aspect ratios (phones), ensure we don't zoom in too much
+    const aspect = this.screenWidth / this.screenHeight;
+    if (aspect > 2.0) {
+      this.baseZoom *= 0.92;
+      this.minZoom *= 0.92;
+    }
   }
 
   resize(screenWidth: number, screenHeight: number) {
