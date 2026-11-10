@@ -102,7 +102,7 @@ export class TitleScreen {
       ctx.save();
       ctx.shadowColor = "#000088";
       ctx.shadowBlur = 15;
-      r.drawScreenText("METAL SONIC 2D", centerX, centerY - 100, "#4488ff", 56, "center", "#000066");
+      r.drawScreenText("O MUNDO DE PEDRO", centerX, centerY - 100, "#4488ff", 56, "center", "#000066");
       ctx.restore();
 
       // Blink start text
