@@ -22,9 +22,12 @@ const COLORS = {
   shirtWhite: "#f0f0f0",
   pants: "#2c3548",
   pantsLight: "#3a4560",
+  belt: "#3a3020",
+  beltBuckle: "#c0a040",
   shoeDark: "#2a2a3a",
   shoeSole: "#e0e0e0",
   shoeAccent: "#1a1a2a",
+  shoeLace: "#d0d0d0",
   mouthRed: "#cc3333",
   mouthDark: "#8b1a1a",
   teeth: "#ffffff",
@@ -99,13 +102,21 @@ export function drawPedroLucas(
   if (isSpinning) {
     drawSpinBall(ctx, s, animator.spinAngle, animator);
     ctx.restore();
+    if (savedColors) Object.assign(COLORS, savedColors);
     return;
   }
 
   if (!animator.flickerVisible) {
     ctx.restore();
+    if (savedColors) Object.assign(COLORS, savedColors);
     return;
   }
+
+  // [10] Ground shadow (drawn before lean/squash so it stays flat)
+  ctx.beginPath();
+  ctx.ellipse(0, s * 0.48, s * 0.35, s * 0.055, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.fill();
 
   const lean = animator.bodyLean;
   ctx.rotate(-lean * dir);
@@ -119,7 +130,9 @@ export function drawPedroLucas(
   drawLeg(ctx, s, 0.15 * s, animator.leftLegAngle);
   drawLeg(ctx, s, -0.15 * s, animator.rightLegAngle);
   drawPantsWaist(ctx, s);
-  drawBody(ctx, s);
+  drawNeck(ctx, s);
+  drawBody(ctx, s, animator);
+  drawShirtTail(ctx, s, animator);
   drawArm(ctx, s, animator.leftArmAngle, true, animator);
   drawArm(ctx, s, animator.rightArmAngle, false, animator);
   drawHead(ctx, s, animator.breathOffset * s * 0.02, animator);
@@ -132,8 +145,19 @@ export function drawPedroLucas(
   }
 }
 
-// --- BODY (bicolor shirt with outline) ---
-function drawBody(ctx: CanvasRenderingContext2D, s: number) {
+// --- NECK (connects head to body) ---
+function drawNeck(ctx: CanvasRenderingContext2D, s: number) {
+  const neckW = s * 0.14;
+  const neckH = s * 0.10;
+  const neckY = -s * 0.50;
+
+  ctx.beginPath();
+  ctx.roundRect(-neckW / 2, neckY, neckW, neckH, s * 0.03);
+  fillAndStroke(ctx, s, COLORS.skin);
+}
+
+// --- BODY (bicolor shirt with outline + collar) ---
+function drawBody(ctx: CanvasRenderingContext2D, s: number, animator: MetalSonicAnimator) {
   const bw = s * 0.52;
   const bh = s * BODY_RATIO;
   const bodyTop = -s * 0.45;
@@ -171,6 +195,38 @@ function drawBody(ctx: CanvasRenderingContext2D, s: number) {
   ctx.lineWidth = s * OUTLINE_W;
   ctx.lineJoin = "round";
   ctx.stroke();
+
+  // [5] Collar / crew neckline at top of shirt
+  const collarY = bodyTop + s * 0.015;
+  const collarW = s * 0.16;
+  ctx.beginPath();
+  ctx.arc(0, collarY, collarW / 2, 0.15, Math.PI - 0.15);
+  ctx.strokeStyle = COLORS.skinShadow;
+  ctx.lineWidth = s * 0.02;
+  ctx.lineCap = "round";
+  ctx.stroke();
+}
+
+// --- SHIRT TAIL (subtle physics when running) ---
+function drawShirtTail(ctx: CanvasRenderingContext2D, s: number, animator: MetalSonicAnimator) {
+  if (animator.currentState !== "running" && animator.currentState !== "skidding") return;
+
+  const bw = s * 0.52;
+  const bodyBottom = -s * 0.45 + s * BODY_RATIO;
+  const wave = Math.sin(animator.time * 12) * s * 0.012;
+  const wave2 = Math.sin(animator.time * 15 + 1.5) * s * 0.008;
+
+  ctx.beginPath();
+  ctx.moveTo(-bw / 2 + s * 0.02, bodyBottom - s * 0.01);
+  ctx.quadraticCurveTo(-bw / 4, bodyBottom + s * 0.025 + wave, 0, bodyBottom + s * 0.01 + wave2);
+  ctx.quadraticCurveTo(bw / 4, bodyBottom + s * 0.025 - wave, bw / 2 - s * 0.02, bodyBottom - s * 0.01);
+  ctx.closePath();
+  ctx.fillStyle = COLORS.shirtWhite;
+  ctx.fill();
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = s * 0.012;
+  ctx.lineJoin = "round";
+  ctx.stroke();
 }
 
 // --- HEAD (larger, flat skin, outline) ---
@@ -183,13 +239,23 @@ function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number, ani
   ctx.arc(0, headY, headR, 0, Math.PI * 2);
   fillAndStroke(ctx, s, COLORS.skin);
 
-  // Hair (natural messy style)
-  drawHair(ctx, s, headY, headR);
+  // [8] Hair (natural messy style — with wind reactivity)
+  drawHair(ctx, s, headY, headR, animator);
 
   // Glasses (with shake during running)
   const glassShake = animator.currentState === "running" ?
     Math.sin(animator.time * 18) * s * 0.003 : 0;
   drawGlasses(ctx, s, headY + glassShake, headR, animator);
+
+  // [2] Nose (small subtle triangle between glasses and mouth)
+  const noseY = headY + headR * 0.25;
+  ctx.beginPath();
+  ctx.moveTo(s * 0.01, noseY - headR * 0.05);
+  ctx.lineTo(s * 0.04, noseY + headR * 0.03);
+  ctx.lineTo(-s * 0.01, noseY + headR * 0.03);
+  ctx.closePath();
+  ctx.fillStyle = COLORS.skinShadow;
+  ctx.fill();
 
   // Expression-based mouth
   drawMouth(ctx, s, headY, headR, animator);
@@ -206,9 +272,17 @@ function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number, ani
   }
 }
 
-// --- HAIR (natural messy/tousled style matching reference) ---
-function drawHair(ctx: CanvasRenderingContext2D, s: number, headY: number, headR: number) {
+// --- HAIR (natural messy/tousled style — with wind tilt when running) ---
+function drawHair(ctx: CanvasRenderingContext2D, s: number, headY: number, headR: number, animator: MetalSonicAnimator) {
   ctx.save();
+
+  // [8] Wind tilt when running — hair leans backward
+  if (animator.currentState === "running" || animator.currentState === "skidding") {
+    const tilt = animator.currentState === "skidding" ? 0.12 : -0.1;
+    ctx.translate(0, headY);
+    ctx.rotate(tilt);
+    ctx.translate(0, -headY);
+  }
 
   // Main hair mass covering the top of the head — natural, full coverage
   ctx.beginPath();
@@ -460,6 +534,15 @@ function drawEyes(
       ctx.arc(eyeX + s * 0.035, glassY - glassH * 0.05, s * 0.015, 0, Math.PI * 2);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
+
+      // [3] Subtle eyebrow for normal/happy expression
+      ctx.strokeStyle = COLORS.outline;
+      ctx.lineWidth = s * 0.02;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(eyeX - s * 0.035, glassY - glassH * 0.38);
+      ctx.quadraticCurveTo(eyeX + s * 0.01, glassY - glassH * 0.45, eyeX + s * 0.04, glassY - glassH * 0.38);
+      ctx.stroke();
     }
   }
 }
@@ -650,7 +733,7 @@ function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft
   ctx.restore();
 }
 
-// --- PANTS WAIST (connects shirt to legs) ---
+// --- PANTS WAIST (connects shirt to legs + belt) ---
 function drawPantsWaist(ctx: CanvasRenderingContext2D, s: number) {
   const bodyBottom = -s * 0.45 + s * BODY_RATIO; // where shirt ends
   const pantsTop = bodyBottom - s * 0.03; // overlap slightly under shirt
@@ -677,18 +760,26 @@ function drawPantsWaist(ctx: CanvasRenderingContext2D, s: number) {
   ctx.lineCap = "round";
   ctx.stroke();
 
-  // Waistband (slightly darker strip at top)
-  const wbH = s * 0.03;
+  // [4] Belt
+  const beltY = pantsTop;
+  const beltH = s * 0.03;
   ctx.beginPath();
-  ctx.moveTo(-topW / 2, pantsTop);
-  ctx.lineTo(topW / 2, pantsTop);
-  ctx.lineTo(topW / 2, pantsTop + wbH);
-  ctx.lineTo(-topW / 2, pantsTop + wbH);
+  ctx.moveTo(-topW / 2, beltY);
+  ctx.lineTo(topW / 2, beltY);
+  ctx.lineTo(topW / 2, beltY + beltH);
+  ctx.lineTo(-topW / 2, beltY + beltH);
   ctx.closePath();
-  fillAndStroke(ctx, s, COLORS.pantsLight);
+  fillAndStroke(ctx, s, COLORS.belt);
+
+  // Belt buckle (small rectangle in center)
+  const buckleW = s * 0.04;
+  const buckleH = s * 0.035;
+  ctx.beginPath();
+  ctx.roundRect(-buckleW / 2, beltY - s * 0.002, buckleW, buckleH, s * 0.005);
+  fillAndStroke(ctx, s, COLORS.beltBuckle);
 }
 
-// --- LEGS + DARK SHOES (matching reference) ---
+// --- LEGS + DARK SHOES (matching reference + pocket detail) ---
 function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angle: number) {
   const hipY = s * 0.1;
 
@@ -701,12 +792,33 @@ function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angl
   ctx.roundRect(-s * 0.055, 0, s * 0.11, s * 0.18, s * 0.04);
   fillAndStroke(ctx, s, COLORS.pants);
 
+  // [6] Pocket outline on upper leg
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.03, s * 0.03);
+  ctx.lineTo(s * 0.02, s * 0.03);
+  ctx.lineTo(s * 0.025, s * 0.075);
+  ctx.lineTo(-s * 0.025, s * 0.075);
+  ctx.closePath();
+  ctx.strokeStyle = COLORS.pantsLight;
+  ctx.lineWidth = s * 0.01;
+  ctx.lineJoin = "round";
+  ctx.stroke();
+
   // Lower leg (pants lighter)
   ctx.beginPath();
   ctx.roundRect(-s * 0.05, s * 0.15, s * 0.1, s * 0.12, s * 0.03);
   fillAndStroke(ctx, s, COLORS.pantsLight);
 
-  // Shoe (dark with light sole)
+  // [6] Knee seam
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.04, s * 0.155);
+  ctx.lineTo(s * 0.04, s * 0.155);
+  ctx.strokeStyle = COLORS.pants;
+  ctx.lineWidth = s * 0.008;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // Shoe (dark with light sole + laces)
   drawShoe(ctx, s);
 
   ctx.restore();
@@ -740,9 +852,26 @@ function drawShoe(ctx: CanvasRenderingContext2D, s: number) {
   ctx.lineWidth = s * 0.012;
   ctx.lineCap = "round";
   ctx.stroke();
+
+  // [7] Shoe laces (small horizontal lines)
+  ctx.strokeStyle = COLORS.shoeLace;
+  ctx.lineWidth = s * 0.007;
+  ctx.lineCap = "round";
+  for (let i = 0; i < 2; i++) {
+    const laceY = shoeTop + shoeH * (0.05 + i * 0.22);
+    ctx.beginPath();
+    ctx.moveTo(s * 0.005, laceY);
+    ctx.lineTo(s * 0.04, laceY);
+    ctx.stroke();
+  }
+  // Lace knot (small dot)
+  ctx.beginPath();
+  ctx.arc(s * 0.022, shoeTop - s * 0.005, s * 0.008, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.shoeLace;
+  ctx.fill();
 }
 
-// --- SPIN BALL (cartoon style with hair tufts and glasses) ---
+// --- SPIN BALL (improved with color segments and shoe glimpse) ---
 function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number, animator: MetalSonicAnimator) {
   const radius = s * 0.45;
 
@@ -756,7 +885,48 @@ function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number, a
   ctx.lineJoin = "round";
   ctx.stroke();
 
-  // Rotating elements
+  // [11] Alternating color segments (shirt white, pants, skin visible during spin)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0, 0, radius - s * 0.01, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.rotate(angle);
+
+  const segCount = 5;
+  const segColors = [COLORS.shirtWhite, COLORS.pants, COLORS.skin, COLORS.shirtWhite, COLORS.pants];
+  for (let i = 0; i < segCount; i++) {
+    const segAngle = (i / segCount) * Math.PI * 2;
+    const segWidth = Math.PI / segCount * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, radius, segAngle, segAngle + segWidth);
+    ctx.closePath();
+    ctx.fillStyle = segColors[i];
+    ctx.globalAlpha = 0.4;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Shoe glimpse rotating
+  const shoeAngle = Math.PI * 0.75;
+  const shoeX = Math.cos(shoeAngle) * radius * 0.6;
+  const shoeY = Math.sin(shoeAngle) * radius * 0.6;
+  ctx.beginPath();
+  ctx.ellipse(shoeX, shoeY, radius * 0.12, radius * 0.08, shoeAngle, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.shoeDark;
+  ctx.fill();
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = s * 0.012;
+  ctx.stroke();
+  // Sole accent
+  ctx.beginPath();
+  ctx.ellipse(shoeX + radius * 0.06, shoeY + radius * 0.04, radius * 0.06, radius * 0.03, shoeAngle, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.shoeSole;
+  ctx.fill();
+
+  ctx.restore();
+
+  // Rotating elements (on top of ball)
   ctx.save();
   ctx.rotate(angle);
 
@@ -827,6 +997,12 @@ export function drawPedroLucasPreview(
   ctx.save();
   ctx.translate(cx, cy);
 
+  // [10] Ground shadow
+  ctx.beginPath();
+  ctx.ellipse(0, s * 0.48, s * 0.28, s * 0.04, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.12)";
+  ctx.fill();
+
   // Legs with dark shoes
   for (const offX of [-s * 0.1, s * 0.1]) {
     // Pants
@@ -839,6 +1015,18 @@ export function drawPedroLucasPreview(
     ctx.lineJoin = "round";
     ctx.stroke();
 
+    // [6] Pocket line on preview pants
+    ctx.beginPath();
+    ctx.moveTo(offX - s * 0.02, s * 0.28);
+    ctx.lineTo(offX + s * 0.01, s * 0.28);
+    ctx.lineTo(offX + s * 0.012, s * 0.32);
+    ctx.lineTo(offX - s * 0.018, s * 0.32);
+    ctx.closePath();
+    ctx.strokeStyle = COLORS.pantsLight;
+    ctx.lineWidth = s * 0.008;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
     // Shoe upper (dark)
     ctx.beginPath();
     ctx.roundRect(offX - s * 0.03, s * 0.39, s * 0.1, s * 0.05, s * 0.02);
@@ -846,6 +1034,15 @@ export function drawPedroLucasPreview(
     ctx.fill();
     ctx.strokeStyle = COLORS.outline;
     ctx.lineWidth = s * 0.02;
+    ctx.stroke();
+
+    // [7] Shoe lace on preview
+    ctx.strokeStyle = COLORS.shoeLace;
+    ctx.lineWidth = s * 0.006;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(offX - s * 0.005, s * 0.395);
+    ctx.lineTo(offX + s * 0.025, s * 0.395);
     ctx.stroke();
 
     // Shoe sole (light)
@@ -860,8 +1057,8 @@ export function drawPedroLucasPreview(
 
   // Pants waist (fills gap between shirt and legs)
   {
-    const pwTop = s * 0.04; // just below where shirt ends
-    const pwBottom = s * 0.30; // overlap with leg tops
+    const pwTop = s * 0.04;
+    const pwBottom = s * 0.30;
     const pwTopW = s * 0.30;
     const pwBottomW = s * 0.26;
 
@@ -886,6 +1083,42 @@ export function drawPedroLucasPreview(
     ctx.lineWidth = s * 0.01;
     ctx.lineCap = "round";
     ctx.stroke();
+
+    // [4] Belt on preview
+    const beltH = s * 0.025;
+    ctx.beginPath();
+    ctx.rect(-pwTopW / 2, pwTop, pwTopW, beltH);
+    ctx.fillStyle = COLORS.belt;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.012;
+    ctx.stroke();
+
+    // Belt buckle
+    const buckleW = s * 0.03;
+    const buckleH = s * 0.028;
+    ctx.beginPath();
+    ctx.roundRect(-buckleW / 2, pwTop - s * 0.002, buckleW, buckleH, s * 0.004);
+    ctx.fillStyle = COLORS.beltBuckle;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.008;
+    ctx.stroke();
+  }
+
+  // [1] Neck on preview
+  {
+    const neckW = s * 0.10;
+    const neckH = s * 0.06;
+    const neckY = -s * 0.25;
+    ctx.beginPath();
+    ctx.roundRect(-neckW / 2, neckY, neckW, neckH, s * 0.02);
+    ctx.fillStyle = COLORS.skin;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.015;
+    ctx.lineJoin = "round";
+    ctx.stroke();
   }
 
   // Body (bicolor with outline)
@@ -909,6 +1142,16 @@ export function drawPedroLucasPreview(
   ctx.strokeStyle = COLORS.outline;
   ctx.lineWidth = s * 0.025;
   ctx.lineJoin = "round";
+  ctx.stroke();
+
+  // [5] Collar on preview
+  const collarY = bodyTop + s * 0.01;
+  const collarW = s * 0.12;
+  ctx.beginPath();
+  ctx.arc(0, collarY, collarW / 2, 0.2, Math.PI - 0.2);
+  ctx.strokeStyle = COLORS.skinShadow;
+  ctx.lineWidth = s * 0.015;
+  ctx.lineCap = "round";
   ctx.stroke();
 
   // Head (larger for chibi)
@@ -981,7 +1224,7 @@ export function drawPedroLucasPreview(
   ctx.lineTo(bridge, glassY);
   ctx.stroke();
 
-  // Eyes
+  // Eyes with eyebrows
   for (const side of [-1, 1]) {
     const eyeX = side * (bridge + glassW / 2);
     ctx.beginPath();
@@ -992,7 +1235,26 @@ export function drawPedroLucasPreview(
     ctx.arc(eyeX + s * 0.02, glassY - glassH * 0.05, s * 0.01, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
+
+    // [3] Eyebrow on preview
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.015;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(eyeX - s * 0.025, glassY - glassH * 0.38);
+    ctx.quadraticCurveTo(eyeX + s * 0.005, glassY - glassH * 0.44, eyeX + s * 0.03, glassY - glassH * 0.38);
+    ctx.stroke();
   }
+
+  // [2] Nose on preview
+  const noseY = headY + headR * 0.25;
+  ctx.beginPath();
+  ctx.moveTo(s * 0.005, noseY - headR * 0.04);
+  ctx.lineTo(s * 0.03, noseY + headR * 0.02);
+  ctx.lineTo(-s * 0.01, noseY + headR * 0.02);
+  ctx.closePath();
+  ctx.fillStyle = COLORS.skinShadow;
+  ctx.fill();
 
   // Smile with outline
   const mouthY = headY + headR * 0.45;
