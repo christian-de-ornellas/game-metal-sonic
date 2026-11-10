@@ -47,6 +47,13 @@ export class EndingCinematic {
 
   private onComplete: () => void;
 
+  // Cached gradients (invalidated on resize)
+  private cachedW = 0;
+  private cachedH = 0;
+  private cachedCelebrationSkyGrad: CanvasGradient | null = null;
+  private cachedSunsetGrad: CanvasGradient | null = null;
+  private cachedSunGrad: CanvasGradient | null = null;
+
   constructor(score: number, totalTime: number, rings: number, bossesDefeated: number, onComplete: () => void) {
     this.score = score;
     this.totalGameTime = totalTime;
@@ -184,10 +191,44 @@ export class EndingCinematic {
     this.fadeAlpha = 1;
   }
 
+  private invalidateGradientCache(ctx: CanvasRenderingContext2D, w: number, h: number) {
+    if (w === this.cachedW && h === this.cachedH) return;
+    this.cachedW = w;
+    this.cachedH = h;
+
+    // Celebration sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+    skyGrad.addColorStop(0, "#1a1a44");
+    skyGrad.addColorStop(0.5, "#2a2a66");
+    skyGrad.addColorStop(1, "#44cc44");
+    this.cachedCelebrationSkyGrad = skyGrad;
+
+    // Sunset gradient
+    const sunsetGrad = ctx.createLinearGradient(0, 0, 0, h);
+    sunsetGrad.addColorStop(0, "#1a1a44");
+    sunsetGrad.addColorStop(0.2, "#442266");
+    sunsetGrad.addColorStop(0.45, "#cc4422");
+    sunsetGrad.addColorStop(0.55, "#ff8844");
+    sunsetGrad.addColorStop(0.65, "#ffaa66");
+    sunsetGrad.addColorStop(0.7, "#22aa44");
+    sunsetGrad.addColorStop(1, "#115522");
+    this.cachedSunsetGrad = sunsetGrad;
+
+    // Sun radial gradient
+    const sunY = h * 0.55;
+    const sunGrad = ctx.createRadialGradient(w * 0.5, sunY, 0, w * 0.5, sunY, 80);
+    sunGrad.addColorStop(0, "rgba(255, 200, 100, 0.8)");
+    sunGrad.addColorStop(0.5, "rgba(255, 150, 50, 0.3)");
+    sunGrad.addColorStop(1, "rgba(255, 100, 20, 0)");
+    this.cachedSunGrad = sunGrad;
+  }
+
   render(renderer: Renderer) {
     const ctx = renderer.ctx;
     const w = renderer.width;
     const h = renderer.height;
+
+    this.invalidateGradientCache(ctx, w, h);
 
     switch (this.scene) {
       case "victory":
@@ -250,12 +291,8 @@ export class EndingCinematic {
   }
 
   private renderCelebration(ctx: CanvasRenderingContext2D, w: number, h: number, _r: Renderer) {
-    // Sky gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-    skyGrad.addColorStop(0, "#1a1a44");
-    skyGrad.addColorStop(0.5, "#2a2a66");
-    skyGrad.addColorStop(1, "#44cc44");
-    ctx.fillStyle = skyGrad;
+    // Sky gradient (cached)
+    ctx.fillStyle = this.cachedCelebrationSkyGrad!;
     ctx.fillRect(0, 0, w, h);
 
     // Ground
@@ -355,16 +392,8 @@ export class EndingCinematic {
   }
 
   private renderSunset(ctx: CanvasRenderingContext2D, w: number, h: number, _r: Renderer) {
-    // Sunset gradient
-    const sunsetGrad = ctx.createLinearGradient(0, 0, 0, h);
-    sunsetGrad.addColorStop(0, "#1a1a44");
-    sunsetGrad.addColorStop(0.2, "#442266");
-    sunsetGrad.addColorStop(0.45, "#cc4422");
-    sunsetGrad.addColorStop(0.55, "#ff8844");
-    sunsetGrad.addColorStop(0.65, "#ffaa66");
-    sunsetGrad.addColorStop(0.7, "#22aa44");
-    sunsetGrad.addColorStop(1, "#115522");
-    ctx.fillStyle = sunsetGrad;
+    // Sunset gradient (cached)
+    ctx.fillStyle = this.cachedSunsetGrad!;
     ctx.fillRect(0, 0, w, h);
 
     // Stars appearing
@@ -380,13 +409,9 @@ export class EndingCinematic {
     }
     ctx.globalAlpha = 1;
 
-    // Sun on horizon
+    // Sun on horizon (cached gradient)
     const sunY = h * 0.55;
-    const sunGrad = ctx.createRadialGradient(w * 0.5, sunY, 0, w * 0.5, sunY, 80);
-    sunGrad.addColorStop(0, "rgba(255, 200, 100, 0.8)");
-    sunGrad.addColorStop(0.5, "rgba(255, 150, 50, 0.3)");
-    sunGrad.addColorStop(1, "rgba(255, 100, 20, 0)");
-    ctx.fillStyle = sunGrad;
+    ctx.fillStyle = this.cachedSunGrad!;
     ctx.beginPath();
     ctx.arc(w * 0.5, sunY, 80, 0, Math.PI * 2);
     ctx.fill();

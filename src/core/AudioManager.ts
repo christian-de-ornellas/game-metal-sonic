@@ -265,6 +265,43 @@ export class AudioManager {
     o.stop(t + 0.2);
   }
 
+  superTransform() {
+    this.ensure();
+    if (!this.ready) return;
+    const c = this.ctx!;
+    const t = c.currentTime;
+
+    // Ascending sweep (sawtooth)
+    const g1 = this.makeGain(0.2, 0.8);
+    const o1 = c.createOscillator();
+    o1.type = "sawtooth";
+    o1.frequency.setValueAtTime(200, t);
+    o1.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
+    o1.connect(g1);
+    o1.start(t);
+    o1.stop(t + 0.8);
+
+    // Harmony (triangle, staggered start)
+    const g2 = this.makeGain(0.15, 0.7);
+    const o2 = c.createOscillator();
+    o2.type = "triangle";
+    o2.frequency.setValueAtTime(400, t + 0.05);
+    o2.frequency.exponentialRampToValueAtTime(2400, t + 0.65);
+    o2.connect(g2);
+    o2.start(t + 0.05);
+    o2.stop(t + 0.75);
+
+    // Shimmer (sine, staggered)
+    const g3 = this.makeGain(0.1, 0.6);
+    const o3 = c.createOscillator();
+    o3.type = "sine";
+    o3.frequency.setValueAtTime(800, t + 0.1);
+    o3.frequency.exponentialRampToValueAtTime(3000, t + 0.7);
+    o3.connect(g3);
+    o3.start(t + 0.1);
+    o3.stop(t + 0.7);
+  }
+
   // ---- Boss Music ----
 
   private bossMusicNodes: OscillatorNode[] = [];

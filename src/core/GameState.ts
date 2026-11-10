@@ -1,3 +1,5 @@
+import { SUPER_FORM_DURATION, SUPER_FORM_RING_COST, SUPER_FORM_FADEOUT } from "../constants";
+
 export class GameState {
   rings = 0;
   score = 0;
@@ -15,6 +17,12 @@ export class GameState {
   actClearPending = false;
   bossesDefeated = 0;
   totalRingsCollected = 0;
+
+  // Super Form
+  superForm = false;
+  superFormTimer = 0;
+  superUsedThisZone = false;
+  superFormFadeOut = 0;
 
   // Checkpoint
   private checkpointX = 5;
@@ -38,6 +46,22 @@ export class GameState {
 
   addScore(points: number) {
     this.score += points;
+  }
+
+  canActivateSuper(): boolean {
+    return this.rings >= SUPER_FORM_RING_COST && !this.superUsedThisZone && !this.superForm;
+  }
+
+  activateSuper() {
+    this.rings -= SUPER_FORM_RING_COST;
+    this.superForm = true;
+    this.superFormTimer = SUPER_FORM_DURATION;
+    this.superUsedThisZone = true;
+    // Piggyback on existing invincible/speedBoost with slightly longer timers
+    this.invincible = true;
+    this.invincibilityTimer = SUPER_FORM_DURATION + 0.5;
+    this.speedBoost = true;
+    this.speedBoostTimer = SUPER_FORM_DURATION + 0.5;
   }
 
   loseLife(): boolean {
@@ -65,6 +89,10 @@ export class GameState {
     this.actClearPending = false;
     this.checkpointX = 5;
     this.checkpointY = 2;
+    this.superForm = false;
+    this.superFormTimer = 0;
+    this.superUsedThisZone = false;
+    this.superFormFadeOut = 0;
   }
 
   reset() {
@@ -85,6 +113,10 @@ export class GameState {
     this.checkpointY = 2;
     this.bossesDefeated = 0;
     this.totalRingsCollected = 0;
+    this.superForm = false;
+    this.superFormTimer = 0;
+    this.superUsedThisZone = false;
+    this.superFormFadeOut = 0;
   }
 
   update(dt: number) {
@@ -102,6 +134,19 @@ export class GameState {
       if (this.speedBoostTimer <= 0) {
         this.speedBoost = false;
       }
+    }
+    // Super Form timer
+    if (this.superForm) {
+      this.superFormTimer -= dt;
+      if (this.superFormTimer <= 0) {
+        this.superForm = false;
+        this.superFormTimer = 0;
+        this.superFormFadeOut = SUPER_FORM_FADEOUT;
+      }
+    }
+    if (this.superFormFadeOut > 0) {
+      this.superFormFadeOut -= dt;
+      if (this.superFormFadeOut < 0) this.superFormFadeOut = 0;
     }
   }
 }

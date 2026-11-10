@@ -69,3 +69,9 @@ export const BOWSER_HP = 12;
 export const BOWSER_SCORE = 20000;
 export const BOSS_HIT_INVULN_TIME = 1.0;
 export const BOSS_DEFEAT_DELAY = 2.0;
+
+// Super Form
+export const SUPER_FORM_DURATION = 13;        // seconds
+export const SUPER_FORM_RING_COST = 50;       // rings consumed
+export const SUPER_FORM_SPEED_MULT = 2.0;     // TOP_SPEED multiplier
+export const SUPER_FORM_FADEOUT = 1.5;         // seconds of visual fade after super ends

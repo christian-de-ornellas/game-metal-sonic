@@ -12,12 +12,14 @@ export interface InputState {
   pause: boolean;
   attack: boolean;
   attackPressed: boolean;
+  upPressed: boolean;
 }
 
 export class InputManager {
   private keys: Map<string, boolean> = new Map();
   private prevJump = false;
   private prevAttack = false;
+  private prevUp = false;
   private gamepadIndex: number | null = null;
   private touchState: TouchState = {
     left: false, right: false, down: false,
@@ -98,6 +100,10 @@ export class InputManager {
     const attackPressed = (attack && !this.prevAttack) || this.touchState.attackPressed;
     this.prevAttack = attack;
 
+    // Up edge detection
+    const upPressed = up && !this.prevUp;
+    this.prevUp = up;
+
     // Pause detection (edge only)
     const pauseDown = this.isDown("escape") || this.isDown("p");
     this.pausePressed = pauseDown && !this.prevPause;
@@ -115,6 +121,7 @@ export class InputManager {
       pause: this.pausePressed,
       attack,
       attackPressed,
+      upPressed,
     };
   }
 }

@@ -26,6 +26,18 @@ export interface BackgroundTheme {
   neonEnabled?: boolean;
 }
 
+// Sin lookup table for fast approximation (4096 entries)
+const SIN_TABLE_SIZE = 4096;
+const SIN_TABLE = new Float32Array(SIN_TABLE_SIZE);
+const SIN_SCALE = SIN_TABLE_SIZE / (Math.PI * 2);
+for (let i = 0; i < SIN_TABLE_SIZE; i++) {
+  SIN_TABLE[i] = Math.sin((i / SIN_TABLE_SIZE) * Math.PI * 2);
+}
+function fastSin(x: number): number {
+  const idx = ((x * SIN_SCALE) % SIN_TABLE_SIZE + SIN_TABLE_SIZE) % SIN_TABLE_SIZE;
+  return SIN_TABLE[idx | 0];
+}
+
 export class ParallaxBackground {
   private clouds: Cloud[] = [];
   private stars: Star[] = [];
@@ -205,11 +217,11 @@ export class ParallaxBackground {
     ctx.beginPath();
     ctx.moveTo(0, r.height);
 
-    for (let sx = -mountainWidth; sx <= r.width + mountainWidth; sx += 6) {
+    for (let sx = -mountainWidth; sx <= r.width + mountainWidth; sx += 12) {
       const worldX = sx / (r.zoom * scale) + offsetX;
-      const h1 = Math.sin(worldX * 0.015) * 80 * scale;
-      const h2 = Math.sin(worldX * 0.008 + 1.5) * 120 * scale;
-      const h3 = Math.sin(worldX * 0.025 + 3.0) * 40 * scale;
+      const h1 = fastSin(worldX * 0.015) * 80 * scale;
+      const h2 = fastSin(worldX * 0.008 + 1.5) * 120 * scale;
+      const h3 = fastSin(worldX * 0.025 + 3.0) * 40 * scale;
       const mountainH = Math.max(h1, h2 * 0.7) + h3 * 0.5 + 50 * scale;
       ctx.lineTo(sx, baseY - mountainH);
     }
@@ -250,9 +262,9 @@ export class ParallaxBackground {
 
     ctx.fillStyle = this.theme.bushColor;
 
-    for (let sx = -20; sx <= r.width + 20; sx += 16) {
+    for (let sx = -20; sx <= r.width + 20; sx += 24) {
       const worldX = sx / (r.zoom * 0.5) + offsetX;
-      const bushH = (15 + Math.sin(worldX * 0.3) * 8 + Math.sin(worldX * 0.7) * 5);
+      const bushH = (15 + fastSin(worldX * 0.3) * 8 + fastSin(worldX * 0.7) * 5);
 
       ctx.beginPath();
       ctx.ellipse(sx, baseY, 12, bushH, 0, 0, Math.PI * 2);

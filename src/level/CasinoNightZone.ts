@@ -275,6 +275,7 @@ export class CasinoNightZone implements Zone {
     this.flipperBuilder.checkCollision(controller);
 
     for (const enemy of this.enemies) {
+      if (Math.abs(enemy.x - playerX) > 25 && Math.abs(enemy.y - playerY) > 15) continue;
       enemy.update(dt, playerX, playerY);
     }
 
@@ -337,7 +338,9 @@ export class CasinoNightZone implements Zone {
     this.ringManager.render(r);
     this.powerUps.render(r);
 
+    const enemyBounds = r.getVisibleBounds();
     for (const enemy of this.enemies) {
+      if (enemy.x < enemyBounds.left - 3 || enemy.x > enemyBounds.right + 3) continue;
       enemy.render(r);
     }
 

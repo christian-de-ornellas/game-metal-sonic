@@ -21,13 +21,12 @@ export class HUD {
     this.zoneNameSlideIn = 0;
   }
 
-  render(r: Renderer, speed: number, playerX: number = 0) {
+  render(r: Renderer, speed: number, playerX: number = 0, dt: number = 1 / 60) {
     const gs = this.gameState;
     const w = r.width;
     const isSmall = w < 400;
     const fontSize = isSmall ? 14 : Math.max(16, Math.min(22, w * 0.018));
     const pad = isSmall ? 10 : 20;
-    const dt = 1 / 60;
 
     // Safe area offsets
     const safeLeft = r.safeLeft;
@@ -104,6 +103,61 @@ export class HUD {
       w - safeRight - pad, safeTop + pad + fontSize + 8,
       "white", fontSize, "right", "black",
     );
+
+    // SUPER FORM indicator (below lives, top-right)
+    const superY = safeTop + pad + (fontSize + 8) * 2;
+    if (gs.superForm) {
+      // Timer bar at top center
+      const timerBarW = Math.min(200, w * 0.3);
+      const timerBarH = 8;
+      const timerBarX = w / 2 - timerBarW / 2;
+      const timerBarY = safeTop + pad;
+      const timerProgress = Math.max(0, gs.superFormTimer / 13);
+      const ctx = r.ctx;
+
+      // Background
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath();
+      ctx.roundRect(timerBarX, timerBarY, timerBarW, timerBarH, 4);
+      ctx.fill();
+
+      // Fill (golden, turns red below 3s)
+      const barColor = gs.superFormTimer < 3 ? "#ff4444" : "#ffcc33";
+      ctx.fillStyle = barColor;
+      ctx.beginPath();
+      ctx.roundRect(timerBarX, timerBarY, timerBarW * timerProgress, timerBarH, 4);
+      ctx.fill();
+
+      // Label
+      const secsLeft = Math.ceil(gs.superFormTimer);
+      r.drawScreenText(
+        `\u2605 SUPER ${secsLeft}s`,
+        w / 2, timerBarY + timerBarH + fontSize * 0.8,
+        gs.superFormTimer < 3 ? "#ff6666" : "#ffdd44",
+        fontSize * 0.85, "center", "black",
+      );
+    } else if (gs.canActivateSuper()) {
+      // Pulsing "SUPER READY" text
+      const pulse = 0.7 + Math.sin(performance.now() * 0.005) * 0.3;
+      const ctx = r.ctx;
+      ctx.globalAlpha = pulse;
+      r.drawScreenText(
+        "\u2605 SUPER READY",
+        w - safeRight - pad, superY,
+        "#ffdd44", fontSize * 0.85, "right", "#664400",
+      );
+      ctx.globalAlpha = 1;
+    } else if (gs.superUsedThisZone && !gs.superForm) {
+      // Dimmed "SUPER USED" text
+      const ctx = r.ctx;
+      ctx.globalAlpha = 0.4;
+      r.drawScreenText(
+        "\u2605 SUPER USED",
+        w - safeRight - pad, superY,
+        "#888888", fontSize * 0.75, "right", "black",
+      );
+      ctx.globalAlpha = 1;
+    }
 
     // Speed indicator (bottom center) — offset by safe area bottom
     if (speed > 2 && !isSmall) {

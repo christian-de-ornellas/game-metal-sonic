@@ -75,6 +75,8 @@ export class ParticleSystem {
   emit(config: ParticleEmitConfig) {
     const angleMin = config.angleMin ?? 0;
     const angleMax = config.angleMax ?? Math.PI * 2;
+    // Hoist color string creation out of loop - all particles in a batch share the same color
+    const colorStr = `rgb(${config.r},${config.g},${config.b})`;
 
     for (let i = 0; i < config.count; i++) {
       const p = this.acquire();
@@ -94,7 +96,7 @@ export class ParticleSystem {
       p.r = config.r;
       p.g = config.g;
       p.b = config.b;
-      p.colorStr = `rgb(${config.r},${config.g},${config.b})`;
+      p.colorStr = colorStr;
       p.alpha = config.alpha ?? 1;
       p.alphaEnd = config.alphaEnd ?? 0;
       p.gravity = config.gravity ?? -10;

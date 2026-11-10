@@ -27,6 +27,11 @@ export class CharacterSelect {
   // Slot layout info for click detection
   private slotRects: { x: number; y: number; w: number; h: number; index: number }[] = [];
 
+  // Cached Metal Sonic preview gradients
+  private msPreviewCachedSize = 0;
+  private msBodyGrad: CanvasGradient | null = null;
+  private msHeadGrad: CanvasGradient | null = null;
+
   constructor(onSelect: (character: CharacterChoice) => void) {
     this.onSelect = onSelect;
 
@@ -208,19 +213,34 @@ export class CharacterSelect {
   ) {
     const s = size;
 
+    // Cache gradients when size changes
+    if (s !== this.msPreviewCachedSize) {
+      this.msPreviewCachedSize = s;
+      const bw = s * 0.3;
+      const bh = s * 0.35;
+      const headR = s * 0.22;
+      const headY = -s * 0.35;
+
+      this.msBodyGrad = ctx.createRadialGradient(-bw * 0.15, -bh * 0.2, bw * 0.15, 0, 0, bh);
+      this.msBodyGrad.addColorStop(0, "#6699ff");
+      this.msBodyGrad.addColorStop(0.6, "#2255cc");
+      this.msBodyGrad.addColorStop(1, "#112266");
+
+      this.msHeadGrad = ctx.createRadialGradient(-headR * 0.25, headY - headR * 0.3, headR * 0.1, 0, headY, headR);
+      this.msHeadGrad.addColorStop(0, "#5588ee");
+      this.msHeadGrad.addColorStop(0.7, "#2244aa");
+      this.msHeadGrad.addColorStop(1, "#111844");
+    }
+
     ctx.save();
     ctx.translate(cx, cy);
 
     // Body
     const bw = s * 0.3;
     const bh = s * 0.35;
-    const bodyGrad = ctx.createRadialGradient(-bw * 0.15, -bh * 0.2, bw * 0.15, 0, 0, bh);
-    bodyGrad.addColorStop(0, "#6699ff");
-    bodyGrad.addColorStop(0.6, "#2255cc");
-    bodyGrad.addColorStop(1, "#112266");
     ctx.beginPath();
     ctx.ellipse(0, s * 0.05, bw, bh, 0, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = this.msBodyGrad!;
     ctx.fill();
 
     // Chest
@@ -232,13 +252,9 @@ export class CharacterSelect {
     // Head
     const headY = -s * 0.35;
     const headR = s * 0.22;
-    const hGrad = ctx.createRadialGradient(-headR * 0.25, headY - headR * 0.3, headR * 0.1, 0, headY, headR);
-    hGrad.addColorStop(0, "#5588ee");
-    hGrad.addColorStop(0.7, "#2244aa");
-    hGrad.addColorStop(1, "#111844");
     ctx.beginPath();
     ctx.arc(0, headY, headR, 0, Math.PI * 2);
-    ctx.fillStyle = hGrad;
+    ctx.fillStyle = this.msHeadGrad!;
     ctx.fill();
 
     // Visor

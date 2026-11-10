@@ -100,7 +100,7 @@ export class TerrainBuilder {
     ctx.lineWidth = Math.max(1, r.zoom * 0.04);
 
     ctx.beginPath();
-    for (let x = startX; x <= endX; x += 0.8) {
+    for (let x = startX; x <= endX; x += 1.2) {
       const h = this.heightFn(x);
       const sx = r.worldToScreenX(x);
       const sy = r.worldToScreenY(h);

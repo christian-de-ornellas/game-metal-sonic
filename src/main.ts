@@ -86,6 +86,9 @@ function main() {
   let bossCinematic: BossCinematic | null = null;
   let endingCinematic: EndingCinematic | null = null;
 
+  // Super form activation tracking
+  let wasSuperLastFrame = false;
+
   // Pause menu
   const pauseMenu = new PauseMenu(
     () => { paused = false; gameState.paused = false; pauseMenu.deactivate(); },
@@ -247,8 +250,12 @@ function main() {
   let prevState: SonicState = SonicState.IDLE;
   let lastTime = performance.now();
 
+  // Particle scale for mobile performance
+  const getParticleScale = () => touchControls.isTouchDevice ? 0.5 : 1;
+
   function handleEnemyCollision() {
     if (!level || !controller) return;
+    const ps = getParticleScale();
 
     for (const enemy of level.enemies) {
       if (!enemy.alive) continue;
@@ -256,7 +263,7 @@ function main() {
       if (enemy.canBeDestroyed(controller.x, controller.y, controller.isAttacking())) {
         particles.emit({
           x: enemy.x, y: enemy.y,
-          count: 15,
+          count: Math.ceil(15 * ps),
           speedMin: 3, speedMax: 8,
           angleMin: 0, angleMax: Math.PI * 2,
           life: 0.6,
@@ -268,7 +275,7 @@ function main() {
         });
         particles.emit({
           x: enemy.x, y: enemy.y,
-          count: 8,
+          count: Math.ceil(8 * ps),
           speedMin: 2, speedMax: 6,
           angleMin: 0, angleMax: Math.PI * 2,
           life: 0.4,
@@ -333,6 +340,9 @@ function main() {
   function handleParticleEffects(dt: number, levelEvents: LevelEvents) {
     if (!controller) return;
 
+    // Reduce particle counts on mobile/tablet for performance
+    const pScale = touchControls.isTouchDevice ? 0.5 : 1;
+
     const isGrounded = controller.state !== SonicState.IN_AIR &&
                        controller.state !== SonicState.JUMPING &&
                        controller.state !== SonicState.HURT;
@@ -343,7 +353,7 @@ function main() {
     if (isGrounded && wasAirborne) {
       particles.emit({
         x: controller.x, y: controller.y,
-        count: 8,
+        count: Math.ceil(8 * pScale),
         speedMin: 1, speedMax: 4,
         angleMin: Math.PI * 0.15, angleMax: Math.PI * 0.85,
         life: 0.5,
@@ -361,7 +371,7 @@ function main() {
     if (justStartedRunning) {
       particles.emit({
         x: controller.x, y: controller.y,
-        count: 5,
+        count: Math.ceil(5 * pScale),
         speedMin: 1, speedMax: 3,
         angleMin: Math.PI * 0.2, angleMax: Math.PI * 0.8,
         life: 0.4,
@@ -379,7 +389,7 @@ function main() {
     if (justReleasedSpinDash) {
       particles.emit({
         x: controller.x, y: controller.y,
-        count: 12,
+        count: Math.ceil(12 * pScale),
         speedMin: 3, speedMax: 8,
         angleMin: Math.PI * 0.1, angleMax: Math.PI * 0.9,
         life: 0.6,
@@ -419,7 +429,7 @@ function main() {
     if (levelEvents.ringCollected) {
       particles.emit({
         x: controller.x, y: controller.y + 1,
-        count: 4,
+        count: Math.ceil(4 * pScale),
         speedMin: 2, speedMax: 5,
         angleMin: 0, angleMax: Math.PI * 2,
         life: 0.4,
@@ -455,7 +465,7 @@ function main() {
     if (levelEvents.springHit) {
       particles.emit({
         x: levelEvents.springHit.x, y: levelEvents.springHit.y + 0.5,
-        count: 6,
+        count: Math.ceil(6 * pScale),
         speedMin: 2, speedMax: 6,
         angleMin: Math.PI * 0.2, angleMax: Math.PI * 0.8,
         life: 0.5,
@@ -473,7 +483,7 @@ function main() {
       const bh = levelEvents.bumperHit;
       particles.emit({
         x: bh.x, y: bh.y,
-        count: 10,
+        count: Math.ceil(10 * pScale),
         speedMin: 3, speedMax: 7,
         angleMin: 0, angleMax: Math.PI * 2,
         life: 0.4,
@@ -503,8 +513,8 @@ function main() {
       });
     }
 
-    // Invincibility stars
-    if (gameState.invincible && gameState.invincibilityTimer > 2 && Math.random() < dt * 20) {
+    // Invincibility stars (skip during super form — super has its own particles)
+    if (gameState.invincible && !gameState.superForm && gameState.invincibilityTimer > 2 && Math.random() < dt * 20) {
       const angle = Math.random() * Math.PI * 2;
       particles.emit({
         x: controller.x + Math.cos(angle) * 0.8,
@@ -517,6 +527,42 @@ function main() {
         sizeEnd: 0.02,
         r: 255, g: 255, b: 255,
         alpha: 1, alphaEnd: 0,
+        gravity: 1, friction: 1,
+      });
+    }
+
+    // Super form golden sparkles (more intense than invincibility stars)
+    if (gameState.superForm && Math.random() < dt * 35) {
+      const angle = Math.random() * Math.PI * 2;
+      particles.emit({
+        x: controller.x + Math.cos(angle) * 1.0,
+        y: controller.y + 0.5 + Math.sin(angle) * 1.0,
+        count: 1,
+        speedMin: 1, speedMax: 4,
+        angleMin: 0, angleMax: Math.PI * 2,
+        life: 0.5,
+        size: 0.1,
+        sizeEnd: 0.02,
+        r: 255, g: 220, b: 50,
+        alpha: 1, alphaEnd: 0,
+        gravity: 2, friction: 1,
+      });
+    }
+
+    // Super form fade-out sparkles (dimmer, slower)
+    if (!gameState.superForm && gameState.superFormFadeOut > 0 && Math.random() < dt * 15) {
+      const angle = Math.random() * Math.PI * 2;
+      particles.emit({
+        x: controller.x + Math.cos(angle) * 0.8,
+        y: controller.y + 0.5 + Math.sin(angle) * 0.8,
+        count: 1,
+        speedMin: 0.5, speedMax: 2,
+        angleMin: 0, angleMax: Math.PI * 2,
+        life: 0.4,
+        size: 0.07,
+        sizeEnd: 0.01,
+        r: 255, g: 200, b: 30,
+        alpha: gameState.superFormFadeOut / 1.5, alphaEnd: 0,
         gravity: 1, friction: 1,
       });
     }
@@ -670,6 +716,32 @@ function main() {
 
     controller.conveyorForce = 0;
     controller.update(dt, inputState, getEffectiveHeight);
+
+    // Detect super form activation in boss battles
+    if (gameState.superForm && !wasSuperLastFrame) {
+      particles.emit({
+        x: controller.x, y: controller.y + 0.5,
+        count: 30,
+        speedMin: 3, speedMax: 10,
+        angleMin: 0, angleMax: Math.PI * 2,
+        life: 0.8,
+        size: 0.15,
+        sizeEnd: 0.03,
+        r: 255, g: 220, b: 50,
+        alpha: 1, alphaEnd: 0,
+        gravity: -3, friction: 1,
+      });
+      screenTintR = 255;
+      screenTintG = 220;
+      screenTintB = 50;
+      screenTintAlpha = 0.35;
+      screenTintDecayRate = 2;
+      shakeAmount = 6;
+      shakeDuration = 0.3;
+      audio.superTransform();
+      controller.animator.setExpression("excited", 2);
+    }
+    wasSuperLastFrame = gameState.superForm;
 
     // Scared expression when falling fast in boss battles
     if (controller.verticalSpeed < -12 &&
@@ -929,6 +1001,7 @@ function main() {
 
     const invincibilityFlicker = gameState.invincible ?
       Math.sin(gameState.invincibilityTimer * 15) > 0 : true;
+    const bossSuperFade = gameState.superFormFadeOut > 0 ? gameState.superFormFadeOut / 1.5 : 0;
     const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : drawMetalSonic;
     drawCharacter(
       renderer,
@@ -939,6 +1012,8 @@ function main() {
       controller.isSpinning(),
       gameState.invincible,
       invincibilityFlicker,
+      gameState.superForm,
+      bossSuperFade,
     );
 
     scorePopup.render(renderer);
@@ -967,7 +1042,7 @@ function main() {
       currentBoss.renderHealthBar(renderer);
     }
 
-    hud.render(renderer, controller.getSpeed(), controller.x);
+    hud.render(renderer, controller.getSpeed(), controller.x, dt);
 
     if (touchControls.isTouchDevice) {
       touchControls.render(renderer);
@@ -1079,6 +1154,37 @@ function main() {
       // Update player
       controller.update(dt, inputState, getEffectiveHeight);
 
+      // Detect super form activation
+      if (gameState.superForm && !wasSuperLastFrame) {
+        // Golden burst particles
+        particles.emit({
+          x: controller.x, y: controller.y + 0.5,
+          count: 30,
+          speedMin: 3, speedMax: 10,
+          angleMin: 0, angleMax: Math.PI * 2,
+          life: 0.8,
+          size: 0.15,
+          sizeEnd: 0.03,
+          r: 255, g: 220, b: 50,
+          alpha: 1, alphaEnd: 0,
+          gravity: -3, friction: 1,
+        });
+        // Screen flash (gold tint)
+        screenTintR = 255;
+        screenTintG = 220;
+        screenTintB = 50;
+        screenTintAlpha = 0.35;
+        screenTintDecayRate = 2;
+        // Screen shake
+        shakeAmount = 6;
+        shakeDuration = 0.3;
+        // Sound
+        audio.superTransform();
+        // Expression
+        controller.animator.setExpression("excited", 2);
+      }
+      wasSuperLastFrame = gameState.superForm;
+
       // Scared expression when falling fast
       if (controller.verticalSpeed < -12 &&
           (controller.state === SonicState.IN_AIR || controller.state === SonicState.JUMPING)) {
@@ -1105,7 +1211,7 @@ function main() {
 
       // Update effects
       particles.update(dt);
-      speedEffects.update(dt, controller.x, controller.y, controller.getSpeed(), controller.isSpinning());
+      speedEffects.update(dt, controller.x, controller.y, controller.getSpeed(), controller.isSpinning(), gameState.superForm);
       scorePopup.update(dt);
 
       // Camera with improved vertical tracking
@@ -1238,7 +1344,7 @@ function main() {
       level.render(renderer);
 
       // Speed effects (between level and player)
-      speedEffects.render(renderer, controller.x, controller.y, controller.groundSpeed, level.getTime());
+      speedEffects.render(renderer, controller.x, controller.y, controller.groundSpeed, level.getTime(), gameState.superForm);
 
       // Render particles (world space)
       particles.render(renderer);
@@ -1246,6 +1352,7 @@ function main() {
       // Render player
       const invincibilityFlicker = gameState.invincible ?
         Math.sin(gameState.invincibilityTimer * 15) > 0 : true;
+      const superFade = gameState.superFormFadeOut > 0 ? gameState.superFormFadeOut / 1.5 : 0;
 
       const drawCharacter = selectedCharacter === "pedro_lucas" ? drawPedroLucas : drawMetalSonic;
       drawCharacter(
@@ -1257,6 +1364,8 @@ function main() {
         controller.isSpinning(),
         gameState.invincible,
         invincibilityFlicker,
+        gameState.superForm,
+        superFade,
       );
 
       // Score popups (world space)
@@ -1271,8 +1380,18 @@ function main() {
         ctx.globalAlpha = 1;
       }
 
+      // Subtle golden screen tint during super form
+      if (gameState.superForm) {
+        const ctx = renderer.ctx;
+        const pulseAlpha = 0.02 + Math.sin(performance.now() * 0.003) * 0.01;
+        ctx.globalAlpha = pulseAlpha;
+        ctx.fillStyle = "rgb(255,220,50)";
+        ctx.fillRect(0, 0, renderer.width, renderer.height);
+        ctx.globalAlpha = 1;
+      }
+
       // HUD (screen space, not affected by camera)
-      hud.render(renderer, controller.getSpeed(), controller.x);
+      hud.render(renderer, controller.getSpeed(), controller.x, dt);
 
       // Tutorial overlay
       tutorial.render(renderer);

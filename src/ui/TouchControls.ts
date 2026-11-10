@@ -47,6 +47,19 @@ export class TouchControls {
   private pauseTapped = false;
   // Track which buttons were pressed on previous update for haptic edge detection
   private prevButtonStates: Set<string> = new Set();
+  // Reusable Set for updateButtonStates to avoid allocation per touch event
+  private _tempPrevPressed: Set<string> = new Set();
+
+  // Cached button positions - only recalculated on resize
+  private cachedWidth = 0;
+  private cachedHeight = 0;
+  private cachedSafeLeft = 0;
+  private cachedSafeRight = 0;
+  private cachedSafeTop = 0;
+  private cachedSafeBottom = 0;
+
+  // Pre-computed color strings for drawButton
+  private buttonColorCache: Map<string, { fill: string; fillPressed: string; stroke: string; strokePressed: string; textFill: string; textFillPressed: string }> = new Map();
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -62,6 +75,9 @@ export class TouchControls {
       pause: { x: 0, y: 0, radius: r * 0.5, label: "\u23F8", pressed: false },
       attack: { x: 0, y: 0, radius: r, label: "\uD83D\uDD25", pressed: false, color: "rgba(255,80,40," },
     };
+
+    // Pre-compute color strings for all buttons
+    this.precomputeColors();
 
     canvas.addEventListener("touchstart", (e) => this.handleTouchStart(e), { passive: false });
     canvas.addEventListener("touchmove", (e) => this.handleTouchMove(e), { passive: false });
@@ -96,9 +112,24 @@ export class TouchControls {
     this.updateButtonStates();
   }
 
+  private precomputeColors() {
+    for (const [key, btn] of Object.entries(this.buttons)) {
+      const baseColor = btn.color ?? "rgba(255,255,255,";
+      this.buttonColorCache.set(key, {
+        fill: baseColor + "0.35)",
+        fillPressed: baseColor + "0.6)",
+        stroke: baseColor + "0.5)",
+        strokePressed: baseColor + "0.75)",
+        textFill: "rgba(0, 0, 0, 0.65)",
+        textFillPressed: "rgba(0, 0, 0, 0.9)",
+      });
+    }
+  }
+
   private updateButtonStates() {
-    // Save previous pressed set for haptic edge detection
-    const prevPressed = new Set<string>();
+    // Reuse Set to avoid allocation per touch event
+    const prevPressed = this._tempPrevPressed;
+    prevPressed.clear();
     for (const [key, btn] of Object.entries(this.buttons)) {
       if (btn.pressed) prevPressed.add(key);
     }
@@ -178,21 +209,21 @@ export class TouchControls {
     };
   }
 
-  render(r: Renderer) {
-    if (!this.isTouchDevice) return;
+  private updateButtonPositions(w: number, h: number, safeLeft: number, safeRight: number, safeTop: number, safeBottom: number) {
+    // Only recalculate if dimensions changed
+    if (w === this.cachedWidth && h === this.cachedHeight &&
+        safeLeft === this.cachedSafeLeft && safeRight === this.cachedSafeRight &&
+        safeTop === this.cachedSafeTop && safeBottom === this.cachedSafeBottom) {
+      return;
+    }
+    this.cachedWidth = w;
+    this.cachedHeight = h;
+    this.cachedSafeLeft = safeLeft;
+    this.cachedSafeRight = safeRight;
+    this.cachedSafeTop = safeTop;
+    this.cachedSafeBottom = safeBottom;
 
-    const ctx = r.ctx;
-    const w = r.width;
-    const h = r.height;
     const baseRadius = Math.min(w, h) * 0.09;
-
-    // Safe area offsets
-    const safeLeft = r.safeLeft;
-    const safeRight = r.safeRight;
-    const safeTop = r.safeTop;
-    const safeBottom = r.safeBottom;
-
-    // Recalculate button positions based on current screen size + safe area
     const margin = baseRadius * 1.3;
     const dpadCenterX = safeLeft + margin + baseRadius;
     const dpadCenterY = h - safeBottom - margin - baseRadius;
@@ -209,45 +240,53 @@ export class TouchControls {
     this.buttons.down.y = dpadCenterY + baseRadius * 1.5;
     this.buttons.down.radius = baseRadius;
 
-    // Jump button (right side, bottom)
     this.buttons.jump.x = w - safeRight - margin - baseRadius;
     this.buttons.jump.y = h - safeBottom - margin - baseRadius;
     this.buttons.jump.radius = baseRadius * 1.3;
 
-    // Spin dash button (right side, above jump)
     this.buttons.spinDash.x = w - safeRight - margin - baseRadius * 2.8;
     this.buttons.spinDash.y = h - safeBottom - margin - baseRadius * 0.6;
     this.buttons.spinDash.radius = baseRadius;
 
-    // Fullscreen button (top right, respecting safe area)
     this.buttons.fullscreen.x = w - safeRight - 30;
     this.buttons.fullscreen.y = safeTop + 30;
     this.buttons.fullscreen.radius = 18;
 
-    // Pause button (top left, respecting safe area)
     this.buttons.pause.x = safeLeft + 30;
     this.buttons.pause.y = safeTop + 30;
     this.buttons.pause.radius = 18;
+  }
 
-    ctx.save();
+  render(r: Renderer) {
+    if (!this.isTouchDevice) return;
+
+    const ctx = r.ctx;
+    const w = r.width;
+    const h = r.height;
+
+    // Cache button positions - only recalculate on resize
+    this.updateButtonPositions(w, h, r.safeLeft, r.safeRight, r.safeTop, r.safeBottom);
+
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     // D-pad buttons
-    for (const btn of [this.buttons.left, this.buttons.right, this.buttons.down]) {
-      this.drawButton(ctx, btn);
-    }
+    this.drawButton(ctx, this.buttons.left, "left");
+    this.drawButton(ctx, this.buttons.right, "right");
+    this.drawButton(ctx, this.buttons.down, "down");
 
     // Action buttons with colors
-    this.drawButton(ctx, this.buttons.jump);
-    this.drawButton(ctx, this.buttons.spinDash);
+    this.drawButton(ctx, this.buttons.jump, "jump");
+    this.drawButton(ctx, this.buttons.spinDash, "spinDash");
 
     // Attack button (only in boss mode)
     if (this.bossMode) {
-      this.buttons.attack.x = w - safeRight - margin - baseRadius * 4.6;
-      this.buttons.attack.y = h - safeBottom - margin - baseRadius * 1.8;
+      const baseRadius = Math.min(w, h) * 0.09;
+      const margin = baseRadius * 1.3;
+      this.buttons.attack.x = w - r.safeRight - margin - baseRadius * 4.6;
+      this.buttons.attack.y = h - r.safeBottom - margin - baseRadius * 1.8;
       this.buttons.attack.radius = baseRadius;
-      this.drawButton(ctx, this.buttons.attack);
+      this.drawButton(ctx, this.buttons.attack, "attack");
     } else {
       // Move attack button offscreen when not in boss mode
       this.buttons.attack.x = -200;
@@ -273,23 +312,21 @@ export class TouchControls {
     ctx.fillStyle = "rgba(255,255,255,0.5)";
     ctx.font = `${ps.radius * 0.9}px sans-serif`;
     ctx.fillText("\u23F8", ps.x, ps.y);
-
-    ctx.restore();
   }
 
-  private drawButton(ctx: CanvasRenderingContext2D, btn: TouchButton) {
-    const alpha = btn.pressed ? 0.6 : 0.35;
-    const baseColor = btn.color ?? "rgba(255,255,255,";
+  private drawButton(ctx: CanvasRenderingContext2D, btn: TouchButton, key: string) {
+    const colors = this.buttonColorCache.get(key);
+    if (!colors) return;
 
     ctx.beginPath();
     ctx.arc(btn.x, btn.y, btn.radius, 0, Math.PI * 2);
-    ctx.fillStyle = baseColor + `${alpha})`;
+    ctx.fillStyle = btn.pressed ? colors.fillPressed : colors.fill;
     ctx.fill();
-    ctx.strokeStyle = baseColor + `${alpha + 0.15})`;
+    ctx.strokeStyle = btn.pressed ? colors.strokePressed : colors.stroke;
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = `rgba(0, 0, 0, ${alpha + 0.3})`;
+    ctx.fillStyle = btn.pressed ? colors.textFillPressed : colors.textFill;
     ctx.font = `bold ${btn.radius * 0.7}px sans-serif`;
     ctx.fillText(btn.label, btn.x, btn.y);
   }

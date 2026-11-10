@@ -14,17 +14,19 @@ export class SpeedEffects {
   private speedLineAlpha = 0;
   private writeIndex = 0;
 
-  update(dt: number, playerX: number, playerY: number, speed: number, isSpinning: boolean) {
-    // Afterimages: record positions when spinning fast
+  update(dt: number, playerX: number, playerY: number, speed: number, isSpinning: boolean, superForm: boolean = false) {
+    // Afterimages: record positions when spinning fast or in super form
     this.afterimageTimer -= dt;
-    if (isSpinning && speed > 8 && this.afterimageTimer <= 0) {
+    const afterimageActive = (isSpinning && speed > 8) || (superForm && speed > 5);
+    const initialAlpha = superForm ? 0.6 : 0.4;
+    if (afterimageActive && this.afterimageTimer <= 0) {
       if (this.afterimages.length < MAX_AFTERIMAGES) {
-        this.afterimages.push({ x: playerX, y: playerY, alpha: 0.4 });
+        this.afterimages.push({ x: playerX, y: playerY, alpha: initialAlpha });
       } else {
         const img = this.afterimages[this.writeIndex];
         img.x = playerX;
         img.y = playerY;
-        img.alpha = 0.4;
+        img.alpha = initialAlpha;
         this.writeIndex = (this.writeIndex + 1) % MAX_AFTERIMAGES;
       }
       this.afterimageTimer = 0.03;
@@ -49,16 +51,17 @@ export class SpeedEffects {
   }
 
   /** Render behind the player (between level and player) */
-  render(r: Renderer, playerX: number, playerY: number, speed: number, time: number) {
+  render(r: Renderer, playerX: number, playerY: number, speed: number, time: number, superForm: boolean = false) {
     const ctx = r.ctx;
 
     // Afterimages
+    const afterimageColor = superForm ? "#ffcc33" : "#4488ff";
     for (const img of this.afterimages) {
       const sx = r.worldToScreenX(img.x);
       const sy = r.worldToScreenY(img.y + 0.8);
       const sr = 0.6 * r.zoom;
       ctx.globalAlpha = img.alpha;
-      ctx.fillStyle = "#4488ff";
+      ctx.fillStyle = afterimageColor;
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
       ctx.fill();
@@ -67,7 +70,7 @@ export class SpeedEffects {
     // Speed lines
     if (this.speedLineAlpha > 0.01) {
       ctx.globalAlpha = this.speedLineAlpha;
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = superForm ? "#ffdd88" : "#ffffff";
       ctx.lineWidth = Math.max(1, 0.02 * r.zoom);
 
       const psx = r.worldToScreenX(playerX);

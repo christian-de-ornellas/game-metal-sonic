@@ -31,6 +31,16 @@ const COLORS = {
   outline: "#111111",
 };
 
+// Super form color overrides (golden palette)
+const SUPER_OVERRIDES: Partial<typeof COLORS> = {
+  hair: "#8b7500",
+  hairHighlight: "#a08800",
+  shirtBurgundy: "#997711",
+  shirtWhite: "#fff8d0",
+  pants: "#4a3a10",
+  pantsLight: "#5a4a20",
+};
+
 const OUTLINE_W = 0.035;
 
 function fillAndStroke(ctx: CanvasRenderingContext2D, s: number, fillColor: string) {
@@ -50,8 +60,16 @@ export function drawPedroLucas(
   isSpinning: boolean,
   invincible: boolean,
   invincibilityFlicker: boolean,
+  superForm: boolean = false,
+  superFade: number = 0,
 ) {
-  if (invincible && !invincibilityFlicker) return;
+  if (invincible && !invincibilityFlicker && !superForm) return;
+
+  // Temporarily apply super color overrides
+  const savedColors = superForm ? { ...COLORS } : null;
+  if (superForm) {
+    Object.assign(COLORS, SUPER_OVERRIDES);
+  }
 
   const ctx = r.ctx;
   const sx = r.worldToScreenX(x);
@@ -61,6 +79,21 @@ export function drawPedroLucas(
 
   ctx.save();
   ctx.translate(sx, sy);
+
+  // Aura glow during super form or fade-out
+  if (superForm || superFade > 0) {
+    const auraAlpha = superForm ? 0.3 + Math.sin(performance.now() * 0.006) * 0.1 : superFade * 0.3;
+    const auraRadius = s * 1.8 + Math.sin(performance.now() * 0.004) * s * 0.2;
+    const gradient = ctx.createRadialGradient(0, -s * 0.2, s * 0.2, 0, -s * 0.2, auraRadius);
+    gradient.addColorStop(0, `rgba(255, 220, 50, ${auraAlpha})`);
+    gradient.addColorStop(0.5, `rgba(255, 200, 30, ${auraAlpha * 0.4})`);
+    gradient.addColorStop(1, `rgba(255, 180, 0, 0)`);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, -s * 0.2, auraRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.scale(dir, 1);
 
   if (isSpinning) {
@@ -85,12 +118,18 @@ export function drawPedroLucas(
 
   drawLeg(ctx, s, 0.15 * s, animator.leftLegAngle);
   drawLeg(ctx, s, -0.15 * s, animator.rightLegAngle);
+  drawPantsWaist(ctx, s);
   drawBody(ctx, s);
   drawArm(ctx, s, animator.leftArmAngle, true, animator);
   drawArm(ctx, s, animator.rightArmAngle, false, animator);
   drawHead(ctx, s, animator.breathOffset * s * 0.02, animator);
 
   ctx.restore();
+
+  // Restore original colors
+  if (savedColors) {
+    Object.assign(COLORS, savedColors);
+  }
 }
 
 // --- BODY (bicolor shirt with outline) ---
@@ -611,6 +650,44 @@ function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft
   ctx.restore();
 }
 
+// --- PANTS WAIST (connects shirt to legs) ---
+function drawPantsWaist(ctx: CanvasRenderingContext2D, s: number) {
+  const bodyBottom = -s * 0.45 + s * BODY_RATIO; // where shirt ends
+  const pantsTop = bodyBottom - s * 0.03; // overlap slightly under shirt
+  const pantsBottom = s * 0.18; // overlap with leg tops
+  const pantsH = pantsBottom - pantsTop;
+  const topW = s * 0.50; // match body width at top
+  const bottomW = s * 0.42; // taper toward legs
+
+  // Main pants area
+  ctx.beginPath();
+  ctx.moveTo(-topW / 2, pantsTop);
+  ctx.lineTo(topW / 2, pantsTop);
+  ctx.lineTo(bottomW / 2, pantsBottom);
+  ctx.lineTo(-bottomW / 2, pantsBottom);
+  ctx.closePath();
+  fillAndStroke(ctx, s, COLORS.pants);
+
+  // Inner leg seam / crotch line
+  ctx.beginPath();
+  ctx.moveTo(0, pantsTop + pantsH * 0.5);
+  ctx.lineTo(0, pantsBottom);
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = s * 0.015;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // Waistband (slightly darker strip at top)
+  const wbH = s * 0.03;
+  ctx.beginPath();
+  ctx.moveTo(-topW / 2, pantsTop);
+  ctx.lineTo(topW / 2, pantsTop);
+  ctx.lineTo(topW / 2, pantsTop + wbH);
+  ctx.lineTo(-topW / 2, pantsTop + wbH);
+  ctx.closePath();
+  fillAndStroke(ctx, s, COLORS.pantsLight);
+}
+
 // --- LEGS + DARK SHOES (matching reference) ---
 function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angle: number) {
   const hipY = s * 0.1;
@@ -778,6 +855,36 @@ export function drawPedroLucasPreview(
     ctx.fill();
     ctx.strokeStyle = COLORS.outline;
     ctx.lineWidth = s * 0.015;
+    ctx.stroke();
+  }
+
+  // Pants waist (fills gap between shirt and legs)
+  {
+    const pwTop = s * 0.04; // just below where shirt ends
+    const pwBottom = s * 0.30; // overlap with leg tops
+    const pwTopW = s * 0.30;
+    const pwBottomW = s * 0.26;
+
+    ctx.beginPath();
+    ctx.moveTo(-pwTopW / 2, pwTop);
+    ctx.lineTo(pwTopW / 2, pwTop);
+    ctx.lineTo(pwBottomW / 2, pwBottom);
+    ctx.lineTo(-pwBottomW / 2, pwBottom);
+    ctx.closePath();
+    ctx.fillStyle = COLORS.pants;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.02;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Crotch seam
+    ctx.beginPath();
+    ctx.moveTo(0, pwTop + (pwBottom - pwTop) * 0.5);
+    ctx.lineTo(0, pwBottom);
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = s * 0.01;
+    ctx.lineCap = "round";
     ctx.stroke();
   }
 

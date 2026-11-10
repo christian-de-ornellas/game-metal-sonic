@@ -4,6 +4,33 @@ import { MetalSonicAnimator } from "./MetalSonicAnimator";
 const BODY_HEIGHT = 40;
 const SCALE = 0.025;
 
+// Color palette object for normal/super modes
+const normalColors = {
+  body: "#2255cc",
+  head: "#2244aa",
+  darkPanel: "#1a1a3a",
+  spikes: "#ddaa11",
+  spinBall: "#2244aa",
+  arm: "#2255cc",
+  leg: "#2255cc",
+  jet: "#444455",
+  jetInner: "#666677",
+};
+
+const superColors = {
+  body: "#ccaa22",
+  head: "#bb9911",
+  darkPanel: "#3a2a0a",
+  spikes: "#ffdd44",
+  spinBall: "#bbaa11",
+  arm: "#ccaa22",
+  leg: "#ccaa22",
+  jet: "#555533",
+  jetInner: "#777755",
+};
+
+let colors = normalColors;
+
 export function drawMetalSonic(
   r: Renderer,
   x: number, y: number,
@@ -12,8 +39,12 @@ export function drawMetalSonic(
   isSpinning: boolean,
   invincible: boolean,
   invincibilityFlicker: boolean,
+  superForm: boolean = false,
+  superFade: number = 0,
 ) {
-  if (invincible && !invincibilityFlicker) return;
+  if (invincible && !invincibilityFlicker && !superForm) return;
+
+  colors = superForm ? superColors : normalColors;
 
   const ctx = r.ctx;
   const sx = r.worldToScreenX(x);
@@ -23,6 +54,21 @@ export function drawMetalSonic(
 
   ctx.save();
   ctx.translate(sx, sy);
+
+  // Aura glow during super form or fade-out
+  if (superForm || superFade > 0) {
+    const auraAlpha = superForm ? 0.3 + Math.sin(performance.now() * 0.006) * 0.1 : superFade * 0.3;
+    const auraRadius = s * 1.8 + Math.sin(performance.now() * 0.004) * s * 0.2;
+    const gradient = ctx.createRadialGradient(0, -s * 0.2, s * 0.2, 0, -s * 0.2, auraRadius);
+    gradient.addColorStop(0, `rgba(255, 220, 50, ${auraAlpha})`);
+    gradient.addColorStop(0.5, `rgba(255, 200, 30, ${auraAlpha * 0.4})`);
+    gradient.addColorStop(1, `rgba(255, 180, 0, 0)`);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, -s * 0.2, auraRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.scale(dir, 1);
 
   if (isSpinning) {
@@ -55,12 +101,12 @@ function drawBody(ctx: CanvasRenderingContext2D, s: number) {
   const bh = s * 0.5;
   ctx.beginPath();
   ctx.ellipse(0, -s * 0.2, bw, bh, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "#2255cc";
+  ctx.fillStyle = colors.body;
   ctx.fill();
 
   ctx.beginPath();
   ctx.ellipse(s * 0.05, -s * 0.15, bw * 0.55, bh * 0.5, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "#1a1a3a";
+  ctx.fillStyle = colors.darkPanel;
   ctx.fill();
 }
 
@@ -71,7 +117,7 @@ function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number) {
   // Head - flat color
   ctx.beginPath();
   ctx.arc(0, headY, headR, 0, Math.PI * 2);
-  ctx.fillStyle = "#2244aa";
+  ctx.fillStyle = colors.head;
   ctx.fill();
 
   // Visor - no shadow, flat color
@@ -103,7 +149,7 @@ function drawSpike(ctx: CanvasRenderingContext2D, s: number, headY: number, offs
   ctx.lineTo(-length, 0);
   ctx.lineTo(0, s * 0.04);
   ctx.closePath();
-  ctx.fillStyle = "#ddaa11";
+  ctx.fillStyle = colors.spikes;
   ctx.fill();
   ctx.restore();
 }
@@ -118,7 +164,7 @@ function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft
 
   ctx.beginPath();
   ctx.roundRect(-s * 0.04, 0, s * 0.08, s * 0.2, s * 0.04);
-  ctx.fillStyle = "#2255cc";
+  ctx.fillStyle = colors.arm;
   ctx.fill();
 
   ctx.beginPath();
@@ -143,7 +189,7 @@ function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angl
 
   ctx.beginPath();
   ctx.roundRect(-s * 0.045, 0, s * 0.09, s * 0.2, s * 0.04);
-  ctx.fillStyle = "#2255cc";
+  ctx.fillStyle = colors.leg;
   ctx.fill();
 
   ctx.beginPath();
@@ -166,12 +212,12 @@ function drawJetEngine(ctx: CanvasRenderingContext2D, s: number, phase: number) 
 
   ctx.beginPath();
   ctx.arc(jetX, jetY, jetR, 0, Math.PI * 2);
-  ctx.fillStyle = "#444455";
+  ctx.fillStyle = colors.jet;
   ctx.fill();
 
   ctx.beginPath();
   ctx.arc(jetX, jetY, jetR * 0.6, 0, Math.PI * 2);
-  ctx.fillStyle = "#666677";
+  ctx.fillStyle = colors.jetInner;
   ctx.fill();
 
   for (let i = 0; i < 3; i++) {
@@ -188,10 +234,10 @@ function drawJetEngine(ctx: CanvasRenderingContext2D, s: number, phase: number) 
 function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number) {
   const radius = s * 0.45;
 
-  // Flat blue ball
+  // Flat ball
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fillStyle = "#2244aa";
+  ctx.fillStyle = colors.spinBall;
   ctx.fill();
 
   // Spin lines

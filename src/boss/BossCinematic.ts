@@ -416,24 +416,23 @@ export class BossCinematic {
       ctx.fillRect(0, 0, w, h);
     }
 
-    // Particles
+    // Particles (flat color with shadowBlur for glow instead of per-particle gradient)
     for (const p of this.particles) {
       const sx = renderer.worldToScreenX(p.x);
       const sy = renderer.worldToScreenY(p.y);
       const lifeRatio = p.life / p.maxLife;
       const sr = (p.size + (1 - lifeRatio) * 0.3) * renderer.zoom;
-      ctx.save();
       ctx.globalAlpha = lifeRatio;
-      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
-      grad.addColorStop(0, "#ffffff");
-      grad.addColorStop(0.3, `rgb(${p.r}, ${p.g}, ${p.b})`);
-      grad.addColorStop(1, `rgba(${p.r}, ${p.g}, 0, 0)`);
+      ctx.shadowColor = `rgb(${p.r}, ${p.g}, ${p.b})`;
+      ctx.shadowBlur = sr * 2;
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = `rgb(${p.r}, ${p.g}, ${p.b})`;
       ctx.fill();
-      ctx.restore();
     }
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
 
     // Dramatic silence period (3.0s -> 3.5s) - dark overlay
     if (this.timer >= 3.0 && this.timer < 3.5) {

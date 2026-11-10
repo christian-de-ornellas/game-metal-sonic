@@ -9,6 +9,7 @@ import {
   SLOPE_FACTOR_UP, SLOPE_FACTOR_DOWN,
   JUMP_BUFFER_WINDOW, COYOTE_TIME,
   AIR_DRAG_THRESHOLD, AIR_DRAG_MIN_SPEED,
+  SUPER_FORM_SPEED_MULT,
 } from "../constants";
 
 export type TerrainQueryFn = (x: number) => number;
@@ -74,7 +75,8 @@ export class MetalSonicController {
 
   isAttacking(): boolean {
     return this.state === SonicState.SPINNING ||
-           this.state === SonicState.JUMPING;
+           this.state === SonicState.JUMPING ||
+           this.gameState.superForm;
   }
 
   isSpinning(): boolean {
@@ -103,6 +105,7 @@ export class MetalSonicController {
   }
 
   takeDamage(sourceX?: number) {
+    if (this.gameState.superForm) return;
     if (this.gameState.invincible) return;
     if (this.state === SonicState.HURT) return;
 
@@ -168,6 +171,13 @@ export class MetalSonicController {
   update(dt: number, input: InputState, getTerrainHeight: TerrainQueryFn) {
     if (this.gameState.paused || this.gameState.gameOver) return;
 
+    // Super form activation: up pressed while grounded and idle/running
+    if (input.upPressed &&
+        (this.state === SonicState.IDLE || this.state === SonicState.RUNNING) &&
+        this.gameState.canActivateSuper()) {
+      this.gameState.activateSuper();
+    }
+
     // Loop physics
     if (this.inLoop) {
       this.updateLoop(dt, input);
@@ -196,7 +206,10 @@ export class MetalSonicController {
     }
     this.wasGroundedLastFrame = isGrounded;
 
-    const effectiveTopSpeed = this.gameState.speedBoost ? TOP_SPEED * 1.5 : TOP_SPEED;
+    const speedMult = this.gameState.superForm ? SUPER_FORM_SPEED_MULT
+                    : this.gameState.speedBoost ? 1.5
+                    : 1;
+    const effectiveTopSpeed = TOP_SPEED * speedMult;
     const jumpRequested = input.jumpPressed || this.jumpBufferTimer > 0;
 
     // Hurt state

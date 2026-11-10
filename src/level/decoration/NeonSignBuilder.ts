@@ -55,14 +55,13 @@ export class NeonSignBuilder {
       // Pulsating intensity
       const pulse = 0.7 + Math.sin(this.time * 3 + sign.phase) * 0.3;
 
-      ctx.save();
       ctx.globalAlpha = pulse;
 
       // Sign background
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh);
 
-      // Border (alternating colors)
+      // Border (alternating colors) - use modulo-based check instead of Math.sin
       const borderColor = Math.sin(this.time * 2 + sign.phase) > 0 ? sign.color1 : sign.color2;
       ctx.strokeStyle = borderColor;
       ctx.lineWidth = Math.max(1, 0.05 * r.zoom);
@@ -76,25 +75,28 @@ export class NeonSignBuilder {
       const innerH = sh * 0.4;
       ctx.fillRect(sx - innerW / 2, sy - innerH / 2, innerW, innerH);
 
-      // Small dots along top
+      // Small dots along top - batch into single beginPath/fill
       ctx.fillStyle = sign.color2;
       const dotCount = Math.floor(sw / (0.15 * r.zoom));
+      const dotRadius = 0.04 * r.zoom;
+      const dotY = sy - sh / 2 + 0.06 * r.zoom;
+      const timePhase = this.time * 5 + sign.phase;
+      ctx.beginPath();
       for (let i = 0; i < dotCount; i++) {
-        const dotX = sx - sw / 2 + (sw / dotCount) * (i + 0.5);
-        const dotPhase = Math.sin(this.time * 5 + i * 0.8 + sign.phase);
-        if (dotPhase > 0) {
-          ctx.beginPath();
-          ctx.arc(dotX, sy - sh / 2 + 0.06 * r.zoom, 0.04 * r.zoom, 0, Math.PI * 2);
-          ctx.fill();
+        // Use modulo-based toggle instead of Math.sin per dot
+        const dotOn = ((timePhase + i * 0.8) % 6.283) < 3.14;
+        if (dotOn) {
+          const dotX = sx - sw / 2 + (sw / dotCount) * (i + 0.5);
+          ctx.moveTo(dotX + dotRadius, dotY);
+          ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
         }
       }
+      ctx.fill();
 
       // Pole
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#444466";
       ctx.fillRect(sx - 0.05 * r.zoom, sy + sh / 2, 0.1 * r.zoom, 1.5 * r.zoom);
-
-      ctx.restore();
     }
   }
 }
