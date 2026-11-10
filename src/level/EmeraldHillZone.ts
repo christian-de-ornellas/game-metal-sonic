@@ -102,6 +102,7 @@ export class EmeraldHillZone implements Zone {
     this.powerUps.addMonitor(45, getH(45) + 2, "speed_shoes");
     this.powerUps.addMonitor(240, getH(240) + 2, "shield");
     this.powerUps.addMonitor(165, getH(165) + 2, "invincibility");
+    this.powerUps.addMonitor(310, getH(310) + 2, "extra_life");
 
     // Enemies
     this.spawnEnemies();

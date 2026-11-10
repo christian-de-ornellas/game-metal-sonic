@@ -151,6 +151,7 @@ export class ChemicalPlantZone implements Zone {
     // Power-ups
     this.powerUps.addMonitor(50, getH(50) + 2, "speed_shoes");
     this.powerUps.addMonitor(150, getH(150) + 2, "rings_10");
+    this.powerUps.addMonitor(180, getH(180) + 2, "extra_life");
     this.powerUps.addMonitor(300, getH(300) + 2, "extra_life");
 
     // Enemies

@@ -176,6 +176,7 @@ export class CasinoNightZone implements Zone {
     // Power-ups
     this.powerUps.addMonitor(100, getH(100) + 2, "invincibility");
     this.powerUps.addMonitor(200, getH(200) + 2, "shield");
+    this.powerUps.addMonitor(270, getH(270) + 2, "extra_life");
     this.powerUps.addMonitor(340, getH(340) + 2, "speed_shoes");
 
     // Enemies
