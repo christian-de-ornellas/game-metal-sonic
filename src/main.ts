@@ -699,6 +699,8 @@ function main() {
     // Update cinematic
     if (bossCinematic && bossCinematic.isActive()) {
       bossCinematic.update(dt, currentBoss.x, currentBoss.y);
+      // Cinematic callback (onDefeatComplete) may have nullified currentBoss
+      if (!currentBoss) return;
       const speedMul = bossCinematic.getGameSpeedMultiplier();
       if (speedMul === 0) {
         // Fully paused (intro) - only update cinematic, skip gameplay
@@ -906,7 +908,7 @@ function main() {
     }
 
     // Boss defeated check
-    if (currentBoss.defeated) {
+    if (currentBoss && currentBoss.defeated) {
       if (bossDefeatTimer === 0) {
         // Just defeated: trigger victory + cinematic
         controller.setVictoryMode(true);
@@ -932,13 +934,13 @@ function main() {
       bossDefeatTimer += dt;
 
       // Fallback: if no cinematic, use old behavior
-      if (!bossCinematic || !bossCinematic.isActive()) {
+      if (currentBoss && (!bossCinematic || !bossCinematic.isActive())) {
         const isRobo = currentBoss instanceof RoboTinic;
         const isDone = isRobo
           ? (currentBoss as RoboTinic).isDefeatedAnimationDone()
           : (currentBoss as BowserBoss).isDefeatedAnimationDone();
 
-        if (isDone && bossDefeatTimer > BOSS_DEFEAT_DELAY && currentBoss) {
+        if (isDone && bossDefeatTimer > BOSS_DEFEAT_DELAY) {
           gameState.bossesDefeated++;
           gameState.addScore(isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE);
           scorePopup.add(0, 10, `+${isRobo ? ROBO_TINIC_SCORE : BOWSER_SCORE}`);
@@ -1059,6 +1061,7 @@ function main() {
   let prevSpinDashCharge = 0;
 
   function gameLoop(now: number) {
+    try {
     const rawDt = (now - lastTime) / 1000;
     // Clamp delta time to prevent physics explosion after tab switch
     const dt = Math.min(rawDt, 1 / 30);
@@ -1453,6 +1456,9 @@ function main() {
     // Screen transition (always on top)
     transition.render(renderer);
 
+    } catch (e) {
+      console.error("Game loop error:", e);
+    }
     requestAnimationFrame(gameLoop);
   }
 
