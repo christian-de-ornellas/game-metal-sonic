@@ -123,6 +123,7 @@ export class CharacterSelect {
     const w = r.width;
     const h = r.height;
     const centerX = w / 2;
+    const small = r.isSmallScreen;
 
     // Dark overlay
     ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
@@ -132,15 +133,15 @@ export class CharacterSelect {
     ctx.save();
     ctx.shadowColor = "#000088";
     ctx.shadowBlur = 12;
-    r.drawScreenText("SELECT CHARACTER", centerX, h * 0.08, "#4488ff", 44, "center", "#000044");
+    r.drawScreenText("SELECT CHARACTER", centerX, h * 0.08, "#4488ff", r.responsiveSize(44), "center", "#000044");
     ctx.restore();
 
-    // Character slots
-    const slotSize = Math.min(200, w * 0.25);
-    const gap = slotSize * 0.6;
+    // Character slots — scale with screen
+    const slotSize = Math.min(r.responsiveSize(200), w * 0.28, h * 0.45);
+    const gap = slotSize * 0.5;
     const totalWidth = CHARACTERS.length * slotSize + (CHARACTERS.length - 1) * gap;
     const startX = centerX - totalWidth / 2 + slotSize / 2;
-    const slotY = h * 0.42;
+    const slotY = h * 0.44;
 
     this.slotRects = [];
     for (let i = 0; i < CHARACTERS.length; i++) {
@@ -181,15 +182,15 @@ export class CharacterSelect {
 
       // Character name
       const nameColor = isSelected ? char.color : "#888888";
-      r.drawScreenText(char.name, cx, slotY + slotSize / 2 + 15, nameColor, 20, "center", "black");
+      r.drawScreenText(char.name, cx, slotY + slotSize / 2 + r.responsiveSize(15), nameColor, r.responsiveSize(20), "center", "black");
 
       // Arrow indicator for selected
       if (isSelected) {
         const arrowBob = Math.sin(this.time * 5) * 5;
         r.drawScreenText(
           "\u25B2",
-          cx, slotY - slotSize / 2 - 30 + arrowBob,
-          char.color, 22, "center",
+          cx, slotY - slotSize / 2 - r.responsiveSize(30) + arrowBob,
+          char.color, r.responsiveSize(22), "center",
         );
       }
     }
@@ -198,9 +199,9 @@ export class CharacterSelect {
     const hintAlpha = 0.5 + Math.sin(this.time * 2) * 0.3;
     ctx.globalAlpha = hintAlpha;
     r.drawScreenText(
-      "LEFT/RIGHT or TAP: Choose  |  SPACE/ENTER: Select  |  ESC: Back",
-      centerX, h - 50,
-      "#888888", 14, "center",
+      small ? "TAP: Choose  |  DOUBLE TAP: Select" : "LEFT/RIGHT or TAP: Choose  |  SPACE/ENTER: Select  |  ESC: Back",
+      centerX, h - r.responsiveSize(50),
+      "#888888", r.responsiveSize(14), "center",
     );
     ctx.globalAlpha = 1;
   }

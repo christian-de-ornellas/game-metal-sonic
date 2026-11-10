@@ -255,6 +255,19 @@ export class Renderer {
     this.ctx.fillText(text, sx, sy);
   }
 
+  /** Scale a base size responsively based on screen dimensions.
+   * Returns base size on tablets/desktop, smaller on phones. */
+  responsiveSize(base: number): number {
+    const minDim = Math.min(this.width, this.height);
+    const scale = Math.max(0.55, Math.min(1.0, minDim / 500));
+    return Math.max(10, Math.round(base * scale));
+  }
+
+  /** True if screen is likely a small mobile device in landscape */
+  get isSmallScreen(): boolean {
+    return Math.min(this.width, this.height) < 420;
+  }
+
   /** Save/restore context state */
   save() { this.ctx.save(); }
   restore() { this.ctx.restore(); }

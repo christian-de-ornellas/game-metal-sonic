@@ -105,6 +105,7 @@ export class ZoneSelect {
     const w = r.width;
     const h = r.height;
     const centerX = w / 2;
+    const small = r.isSmallScreen;
 
     // Dark overlay
     ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
@@ -114,18 +115,19 @@ export class ZoneSelect {
     ctx.save();
     ctx.shadowColor = "#000088";
     ctx.shadowBlur = 12;
-    r.drawScreenText("ZONE SELECT", centerX, h * 0.12, "#4488ff", 48, "center", "#000044");
+    r.drawScreenText("ZONE SELECT", centerX, h * 0.08, "#4488ff", r.responsiveSize(48), "center", "#000044");
     ctx.restore();
 
-    // Zone list
-    const entryHeight = 80;
-    const startY = h * 0.25;
-    const entryWidth = Math.min(500, w * 0.7);
+    // Zone list — scale entry height/width with screen
+    const entryHeight = r.responsiveSize(80);
+    const entryGap = r.responsiveSize(15);
+    const startY = h * 0.22;
+    const entryWidth = Math.min(r.responsiveSize(500), w * 0.8);
 
     this.entryRects = [];
     for (let i = 0; i < this.zones.length; i++) {
       const zone = this.zones[i];
-      const y = startY + i * (entryHeight + 15);
+      const y = startY + i * (entryHeight + entryGap);
       const isSelected = i === this.selectedIndex;
       this.entryRects.push({ x: centerX - entryWidth / 2, y, w: entryWidth, h: entryHeight, index: i });
 
@@ -153,23 +155,23 @@ export class ZoneSelect {
       // Zone name
       r.drawScreenText(
         zone.name,
-        centerX - entryWidth / 2 + 20, y + 15,
-        isSelected ? zone.color : "#aaaaaa", 26, "left", "black"
+        centerX - entryWidth / 2 + r.responsiveSize(20), y + entryHeight * 0.22,
+        isSelected ? zone.color : "#aaaaaa", r.responsiveSize(26), "left", "black",
       );
 
       // Description
       r.drawScreenText(
         zone.description,
-        centerX - entryWidth / 2 + 20, y + 48,
-        isSelected ? "#cccccc" : "#666666", 16, "left"
+        centerX - entryWidth / 2 + r.responsiveSize(20), y + entryHeight * 0.62,
+        isSelected ? "#cccccc" : "#666666", r.responsiveSize(16), "left",
       );
 
       // Arrow indicator
       if (isSelected) {
-        const arrowX = centerX + entryWidth / 2 - 30;
+        const arrowX = centerX + entryWidth / 2 - r.responsiveSize(30);
         const arrowBlink = Math.sin(this.time * 5) > 0;
         if (arrowBlink) {
-          r.drawScreenText(">", arrowX, y + 25, zone.color, 28, "center");
+          r.drawScreenText(">", arrowX, y + entryHeight * 0.3, zone.color, r.responsiveSize(28), "center");
         }
       }
     }
@@ -178,9 +180,9 @@ export class ZoneSelect {
     const hintAlpha = 0.5 + Math.sin(this.time * 2) * 0.3;
     ctx.globalAlpha = hintAlpha;
     r.drawScreenText(
-      "UP/DOWN or TAP: Navigate  |  SPACE/ENTER: Select  |  ESC: Back",
-      centerX, h - 50,
-      "#888888", 14, "center"
+      small ? "TAP TO SELECT" : "UP/DOWN or TAP: Navigate  |  SPACE/ENTER: Select  |  ESC: Back",
+      centerX, h - r.responsiveSize(50),
+      "#888888", r.responsiveSize(14), "center",
     );
     ctx.globalAlpha = 1;
   }

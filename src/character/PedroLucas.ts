@@ -707,9 +707,14 @@ function drawArm(ctx: CanvasRenderingContext2D, s: number, angle: number, isLeft
   ctx.translate(offsetX, shoulderY);
   ctx.rotate(angle);
 
-  // Upper arm (skin-toned sleeve area)
+  // Sleeve (burgundy shirt short sleeve)
   ctx.beginPath();
-  ctx.roundRect(-s * 0.055, 0, s * 0.11, s * 0.18, s * 0.04);
+  ctx.roundRect(-s * 0.06, 0, s * 0.12, s * 0.13, s * 0.04);
+  fillAndStroke(ctx, s, COLORS.shirtBurgundy);
+
+  // Exposed upper arm below sleeve (skin)
+  ctx.beginPath();
+  ctx.roundRect(-s * 0.05, s * 0.10, s * 0.10, s * 0.10, s * 0.035);
   fillAndStroke(ctx, s, COLORS.skinLight);
 
   // Forearm

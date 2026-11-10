@@ -248,13 +248,17 @@ export class TouchControls {
     this.buttons.spinDash.y = h - safeBottom - margin - baseRadius * 0.6;
     this.buttons.spinDash.radius = baseRadius;
 
-    this.buttons.fullscreen.x = w - safeRight - 30;
-    this.buttons.fullscreen.y = safeTop + 30;
-    this.buttons.fullscreen.radius = 18;
+    // Scale utility button size with screen (min 18, max 28)
+    const utilRadius = Math.max(18, Math.min(28, Math.min(w, h) * 0.045));
+    const utilMargin = utilRadius * 1.6;
 
-    this.buttons.pause.x = safeLeft + 30;
-    this.buttons.pause.y = safeTop + 30;
-    this.buttons.pause.radius = 18;
+    this.buttons.fullscreen.x = w - safeRight - utilMargin;
+    this.buttons.fullscreen.y = safeTop + utilMargin;
+    this.buttons.fullscreen.radius = utilRadius;
+
+    this.buttons.pause.x = safeLeft + utilMargin;
+    this.buttons.pause.y = safeTop + utilMargin;
+    this.buttons.pause.radius = utilRadius;
   }
 
   render(r: Renderer) {

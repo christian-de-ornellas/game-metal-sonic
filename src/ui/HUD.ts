@@ -24,9 +24,10 @@ export class HUD {
   render(r: Renderer, speed: number, playerX: number = 0, dt: number = 1 / 60) {
     const gs = this.gameState;
     const w = r.width;
-    const isSmall = w < 400;
-    const fontSize = isSmall ? 14 : Math.max(16, Math.min(22, w * 0.018));
-    const pad = isSmall ? 10 : 20;
+    const minDim = Math.min(w, r.height);
+    const isSmall = minDim < 420;
+    const fontSize = isSmall ? Math.max(11, Math.round(minDim * 0.032)) : Math.max(16, Math.min(22, w * 0.018));
+    const pad = isSmall ? Math.max(6, Math.round(minDim * 0.022)) : 20;
 
     // Safe area offsets
     const safeLeft = r.safeLeft;
@@ -159,14 +160,15 @@ export class HUD {
       ctx.globalAlpha = 1;
     }
 
-    // Speed indicator (bottom center) — offset by safe area bottom
-    if (speed > 2 && !isSmall) {
-      const bars = Math.min(Math.floor(speed / 1.5), 10);
-      const speedText = "\u2588".repeat(bars) + ` ${speed.toFixed(1)}`;
+    // Speed indicator (bottom center) — compact on mobile
+    if (speed > 2) {
+      const maxBars = isSmall ? 5 : 10;
+      const bars = Math.min(Math.floor(speed / (isSmall ? 2.5 : 1.5)), maxBars);
+      const speedText = isSmall ? "\u25B6".repeat(bars) : "\u2588".repeat(bars) + ` ${speed.toFixed(1)}`;
       r.drawScreenText(
         speedText,
         w / 2, r.height - safeBottom - pad - fontSize,
-        "#88ccff", fontSize * 0.8, "center", "black",
+        "#88ccff", fontSize * (isSmall ? 0.7 : 0.8), "center", "black",
       );
     }
 

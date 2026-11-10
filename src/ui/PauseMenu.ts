@@ -90,6 +90,7 @@ export class PauseMenu {
     const w = r.width;
     const h = r.height;
     const centerX = w / 2;
+    const small = r.isSmallScreen;
 
     // Darken background
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -99,24 +100,26 @@ export class PauseMenu {
     ctx.save();
     ctx.shadowColor = "#000088";
     ctx.shadowBlur = 12;
-    r.drawScreenText("PAUSED", centerX, h * 0.3, "#4488ff", 48, "center", "#000044");
+    r.drawScreenText("PAUSED", centerX, h * 0.3, "#4488ff", r.responsiveSize(48), "center", "#000044");
     ctx.restore();
 
     // Menu items — store rects for hit-testing
     this.itemRects = [];
     const startY = h * 0.48;
-    const itemGap = 50;
+    const itemGap = r.responsiveSize(50);
+    const selectedSize = r.responsiveSize(28);
+    const normalSize = r.responsiveSize(22);
     for (let i = 0; i < this.items.length; i++) {
       const isSelected = i === this.selectedIndex;
       const y = startY + i * itemGap;
       const color = isSelected ? "#ffcc00" : "#888888";
-      const size = isSelected ? 28 : 22;
+      const size = isSelected ? selectedSize : normalSize;
       const prefix = isSelected ? "> " : "  ";
       r.drawScreenText(prefix + this.items[i], centerX, y, color, size, "center", "black");
 
-      // Store hit rect for touch (generous area around text)
-      const itemW = 300;
-      const itemH = 44;
+      // Touch hit rect (generous, scales with screen)
+      const itemW = Math.max(300, w * 0.4);
+      const itemH = Math.max(44, itemGap * 0.9);
       this.itemRects.push({
         x: centerX - itemW / 2,
         y: y - 4,
@@ -127,9 +130,9 @@ export class PauseMenu {
 
     // Controls hint
     r.drawScreenText(
-      "UP/DOWN: Navigate  |  SPACE/ENTER/TAP: Select  |  ESC: Resume",
-      centerX, h - 40,
-      "#666666", 14, "center",
+      small ? "TAP TO SELECT" : "UP/DOWN: Navigate  |  SPACE/ENTER/TAP: Select  |  ESC: Resume",
+      centerX, h - r.responsiveSize(40),
+      "#666666", r.responsiveSize(14), "center",
     );
   }
 }

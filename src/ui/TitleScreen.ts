@@ -98,6 +98,7 @@ export class TitleScreen {
     const ctx = r.ctx;
     const w = r.width;
     const h = r.height;
+    const small = r.isSmallScreen;
 
     // Dark overlay
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -110,39 +111,62 @@ export class TitleScreen {
       ctx.save();
       ctx.shadowColor = "#880000";
       ctx.shadowBlur = 10;
-      r.drawScreenText("GAME OVER", centerX, centerY - 60, "#ff4444", 56, "center", "#440000");
+      r.drawScreenText("GAME OVER", centerX, centerY - r.responsiveSize(60), "#ff4444", r.responsiveSize(56), "center", "#440000");
       ctx.restore();
 
       const blinkAlpha = 0.5 + Math.sin(this.time * 3) * 0.5;
       ctx.globalAlpha = blinkAlpha;
-      r.drawScreenText("PRESS SPACE TO RETRY", centerX, centerY + 20, "white", 22, "center", "black");
+      r.drawScreenText(
+        small ? "TAP TO RETRY" : "PRESS SPACE TO RETRY",
+        centerX, centerY + r.responsiveSize(20),
+        "white", r.responsiveSize(22), "center", "black",
+      );
       ctx.globalAlpha = 1;
     } else {
       ctx.save();
       ctx.shadowColor = "#000088";
       ctx.shadowBlur = 15;
-      r.drawScreenText("O MUNDO DE PEDRO", centerX, centerY - 100, "#4488ff", 56, "center", "#000066");
+      r.drawScreenText("O MUNDO DE PEDRO", centerX, centerY - r.responsiveSize(100), "#4488ff", r.responsiveSize(56), "center", "#000066");
       ctx.restore();
 
       const blinkAlpha = 0.5 + Math.sin(this.time * 3) * 0.5;
       ctx.globalAlpha = blinkAlpha;
-      r.drawScreenText("PRESS SPACE, CLICK OR TAP TO START", centerX, centerY - 10, "white", 22, "center", "black");
+      r.drawScreenText(
+        small ? "TAP TO START" : "PRESS SPACE, CLICK OR TAP TO START",
+        centerX, centerY - r.responsiveSize(10),
+        "white", r.responsiveSize(22), "center", "black",
+      );
       ctx.globalAlpha = 1;
 
-      r.drawScreenText("PRESS Z OR ENTER FOR ZONE SELECT", centerX, centerY + 30, "#88aaff", 18, "center", "black");
+      r.drawScreenText(
+        small ? "HOLD FOR ZONE SELECT" : "PRESS Z OR ENTER FOR ZONE SELECT",
+        centerX, centerY + r.responsiveSize(30),
+        "#88aaff", r.responsiveSize(18), "center", "black",
+      );
 
-      // Controls
-      r.drawScreenText("ARROWS/WASD: Move  |  SPACE/Z: Jump  |  DOWN + JUMP: Spin Dash", centerX, centerY + 80, "#aaaaaa", 16, "center");
-      r.drawScreenText("ESC/P: Pause", centerX, centerY + 105, "#888888", 14, "center");
+      // Controls (hide on very small screens — touch controls are self-explanatory)
+      if (!small) {
+        r.drawScreenText(
+          "ARROWS/WASD: Move  |  SPACE/Z: Jump  |  DOWN + JUMP: Spin Dash",
+          centerX, centerY + r.responsiveSize(80),
+          "#aaaaaa", r.responsiveSize(16), "center",
+        );
+        r.drawScreenText("ESC/P: Pause", centerX, centerY + r.responsiveSize(105), "#888888", r.responsiveSize(14), "center");
+      }
 
       // Credits
-      r.drawScreenText("Created by Christian Possidonio & Pedro Lucas Possidonio", centerX, h - 60, "#6688bb", 14, "center");
-      r.drawScreenText("possidonio.com", centerX, h - 38, "#4488ff", 14, "center");
+      r.drawScreenText(
+        "Created by Christian Possidonio & Pedro Lucas Possidonio",
+        centerX, h - r.responsiveSize(60),
+        "#6688bb", r.responsiveSize(14), "center",
+      );
+      r.drawScreenText("possidonio.com", centerX, h - r.responsiveSize(38), "#4488ff", r.responsiveSize(14), "center");
 
       this.canvas = ctx.canvas;
-      ctx.font = `14px monospace`;
+      const linkFontSize = r.responsiveSize(14);
+      ctx.font = `${linkFontSize}px monospace`;
       const linkW = ctx.measureText("possidonio.com").width;
-      this.linkBounds = { x: centerX - linkW / 2, y: h - 52, w: linkW, h: 20 };
+      this.linkBounds = { x: centerX - linkW / 2, y: h - r.responsiveSize(52), w: linkW, h: 20 };
     }
   }
 }
