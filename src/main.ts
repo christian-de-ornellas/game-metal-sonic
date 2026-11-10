@@ -601,12 +601,24 @@ function main() {
     controller.conveyorForce = 0;
     controller.update(dt, inputState, getEffectiveHeight);
 
+    // Scared expression when falling fast in boss battles
+    if (controller.verticalSpeed < -12 &&
+        (controller.state === SonicState.IN_AIR || controller.state === SonicState.JUMPING)) {
+      if (controller.animator.expression !== "scared") {
+        controller.animator.setExpression("scared", 0);
+      }
+    } else if (controller.animator.expression === "scared" && controller.verticalSpeed >= -12) {
+      controller.animator.setExpression("normal", 0);
+    }
+
     // Clamp player to arena
     controller.x = arena.clampPlayerX(controller.x);
 
     // Fire projectiles
     if (inputState.attackPressed) {
       projectiles.fire(controller.x, controller.y, controller.facingRight);
+      controller.setAttackMode(true);
+      setTimeout(() => { if (controller) controller.setAttackMode(false); }, 300);
     }
 
     // Update arena
@@ -726,6 +738,11 @@ function main() {
 
     // Boss defeated check
     if (currentBoss.defeated) {
+      if (bossDefeatTimer === 0) {
+        // Just defeated: trigger victory
+        controller.setVictoryMode(true);
+        controller.animator.setExpression("excited", 10);
+      }
       bossDefeatTimer += dt;
       const isRobo = currentBoss instanceof RoboTinic;
       const isDone = isRobo
@@ -917,6 +934,16 @@ function main() {
       // Update player
       controller.update(dt, inputState, getEffectiveHeight);
 
+      // Scared expression when falling fast
+      if (controller.verticalSpeed < -12 &&
+          (controller.state === SonicState.IN_AIR || controller.state === SonicState.JUMPING)) {
+        if (controller.animator.expression !== "scared") {
+          controller.animator.setExpression("scared", 0);
+        }
+      } else if (controller.animator.expression === "scared" && controller.verticalSpeed >= -12) {
+        controller.animator.setExpression("normal", 0);
+      }
+
       // Update level (returns event info)
       const levelEvents = level.update(dt, controller.x, controller.y, controller);
 
@@ -966,6 +993,10 @@ function main() {
       if (levelEvents.goalReached && !gameState.actClearPending) {
         gameState.actClearPending = true;
 
+        // Victory pose
+        controller.setVictoryMode(true);
+        controller.animator.setExpression("excited", 5);
+
         // Save best scores/times
         save.setHighScore(zoneManager.zoneIndex, gameState.score);
         save.setBestTime(zoneManager.zoneIndex, gameState.time);
@@ -982,6 +1013,7 @@ function main() {
           gameState.time,
           gameState.rings,
           () => {
+            controller!.setVictoryMode(false);
             gameState.addScore(actClear!.getTotalBonus());
 
             if (zoneManager.hasNextZone()) {

@@ -42,6 +42,12 @@ export class MetalSonicController {
   private coyoteTimer = 0;
   private wasGroundedLastFrame = true;
 
+  // New animation triggers
+  private wasAirborneLastFrame = false;
+  private skidding = false;
+  private victoryMode = false;
+  private attackMode = false;
+
   // Loop state
   private inLoop = false;
   private loopAngle = 0;
@@ -86,6 +92,14 @@ export class MetalSonicController {
     this.verticalSpeed = vy;
     this.state = SonicState.IN_AIR;
     if (vx !== 0) this.facingRight = vx > 0;
+  }
+
+  setVictoryMode(active: boolean) {
+    this.victoryMode = active;
+  }
+
+  setAttackMode(active: boolean) {
+    this.attackMode = active;
   }
 
   takeDamage(sourceX?: number) {
@@ -339,8 +353,13 @@ export class MetalSonicController {
           const speedRatio = Math.abs(this.groundSpeed) / effectiveTopSpeed;
           const accelCurve = 1 - speedRatio * 0.4;
           this.groundSpeed += inputDir * ACCELERATION * accelCurve * dt;
+          this.skidding = false;
         } else {
           this.groundSpeed += inputDir * DECELERATION * dt;
+          // Skidding: input opposes movement at high speed
+          if (Math.abs(this.groundSpeed) > 3) {
+            this.skidding = true;
+          }
         }
       } else if (this.state !== SonicState.SPINNING && this.state !== SonicState.SPIN_DASH) {
         if (Math.abs(this.groundSpeed) > FRICTION * dt) {
@@ -497,12 +516,52 @@ export class MetalSonicController {
   }
 
   private updateAnimation(dt: number) {
+    const isAirborne = this.state === SonicState.JUMPING || this.state === SonicState.IN_AIR;
+    const isGrounded = !isAirborne && this.state !== SonicState.HURT;
+
+    // Detect skidding: input opposite to groundSpeed at high speed while running
+    if (this.state === SonicState.RUNNING && Math.abs(this.groundSpeed) > 3) {
+      // Skidding is set externally or detected via deceleration
+      // Check if speed is decelerating rapidly (groundSpeed direction vs facing)
+      this.skidding = false; // will be set below based on input context
+    } else {
+      this.skidding = false;
+    }
+
+    // Detect landing: was airborne last frame, now grounded
+    let justLanded = false;
+    if (this.wasAirborneLastFrame && isGrounded) {
+      justLanded = true;
+    }
+    this.wasAirborneLastFrame = isAirborne;
+
+    // Priority-based animation state
     let animState: AnimationState;
-    if (this.state === SonicState.HURT) animState = "hurt";
-    else if (this.state === SonicState.RUNNING) animState = "running";
-    else if (this.state === SonicState.SPINNING || this.state === SonicState.SPIN_DASH) animState = "spinning";
-    else if (this.state === SonicState.JUMPING || this.state === SonicState.IN_AIR) animState = "air";
-    else animState = "idle";
+    if (this.victoryMode) {
+      animState = "victory";
+    } else if (this.attackMode) {
+      animState = "attack";
+    } else if (this.state === SonicState.HURT) {
+      animState = "hurt";
+    } else if (this.state === SonicState.RUNNING && this.skidding) {
+      animState = "skidding";
+    } else if (this.state === SonicState.RUNNING) {
+      animState = "running";
+    } else if (this.state === SonicState.SPIN_DASH) {
+      animState = "charging";
+    } else if (this.state === SonicState.SPINNING) {
+      animState = "spinning";
+    } else if (isAirborne) {
+      animState = "air";
+    } else if (justLanded && this.animator.currentState !== "landing") {
+      animState = "landing";
+    } else if (this.animator.currentState === "landing" && this.animator.landingTimer > 0) {
+      animState = "landing";
+    } else if (this.state === SonicState.IDLE) {
+      animState = "idle";
+    } else {
+      animState = "idle";
+    }
 
     this.animator.setState(animState);
     this.animator.update(dt, Math.abs(this.groundSpeed));
