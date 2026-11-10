@@ -19,11 +19,7 @@ export class RoboTinicArena {
     const ctx = renderer.ctx;
 
     // Dark factory background
-    const grad = ctx.createLinearGradient(0, 0, 0, renderer.height);
-    grad.addColorStop(0, "#1a0a0a");
-    grad.addColorStop(0.5, "#2a1515");
-    grad.addColorStop(1, "#0d0808");
-    ctx.fillStyle = grad;
+    ctx.fillStyle = "#2a1515";
     ctx.fillRect(0, 0, renderer.width, renderer.height);
 
     // Red pulsating ambient light
@@ -63,14 +59,10 @@ export class RoboTinicArena {
       const lightPulse = Math.sin(this.time * 3 + lx * 0.5) * 0.5 + 0.5;
       const sx = renderer.worldToScreenX(lx);
       const sy = renderer.worldToScreenY(18);
-      ctx.save();
-      ctx.shadowColor = `rgba(255, 0, 0, ${lightPulse})`;
-      ctx.shadowBlur = 20 + lightPulse * 15;
       ctx.beginPath();
       ctx.arc(sx, sy, 4, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255, ${Math.floor(40 * lightPulse)}, 0, ${0.5 + lightPulse * 0.5})`;
       ctx.fill();
-      ctx.restore();
     }
 
     // Metal floor platform

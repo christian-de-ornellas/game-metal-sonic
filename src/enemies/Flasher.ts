@@ -70,23 +70,9 @@ export class Flasher extends Badnik {
     }
 
     // Body (orb-like)
-    const bodyGrad = ctx.createRadialGradient(
-      sx - 0.1 * s, sy - 0.1 * s, 0.05 * s,
-      sx, sy, 0.45 * s
-    );
-    if (this.vulnerable) {
-      bodyGrad.addColorStop(0, "#ffdd44");
-      bodyGrad.addColorStop(0.6, "#ff8800");
-      bodyGrad.addColorStop(1, "#cc4400");
-    } else {
-      bodyGrad.addColorStop(0, "#88aaff");
-      bodyGrad.addColorStop(0.6, "#4466cc");
-      bodyGrad.addColorStop(1, "#223388");
-    }
-
     ctx.beginPath();
     ctx.arc(sx, sy, 0.4 * s, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = this.vulnerable ? "#ff8800" : "#4466cc";
     ctx.fill();
 
     // Electric arcs when invulnerable
@@ -112,16 +98,12 @@ export class Flasher extends Badnik {
     // Eyes
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.vulnerable ? "#ff0000" : "#ffffff";
-    ctx.save();
-    ctx.shadowColor = this.vulnerable ? "#ff0000" : "#88ccff";
-    ctx.shadowBlur = 5;
     ctx.beginPath();
     ctx.arc(sx - 0.1 * s, sy - 0.05 * s, 0.06 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
     ctx.arc(sx + 0.1 * s, sy - 0.05 * s, 0.06 * s, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
 
     // Glow ring when vulnerable (target indicator)
     if (this.vulnerable) {

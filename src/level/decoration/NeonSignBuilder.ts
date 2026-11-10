@@ -58,10 +58,6 @@ export class NeonSignBuilder {
       ctx.save();
       ctx.globalAlpha = pulse;
 
-      // Glow effect
-      ctx.shadowColor = sign.color1;
-      ctx.shadowBlur = 12 * pulse;
-
       // Sign background
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.fillRect(sx - sw / 2, sy - sh / 2, sw, sh);
@@ -73,7 +69,6 @@ export class NeonSignBuilder {
       ctx.strokeRect(sx - sw / 2, sy - sh / 2, sw, sh);
 
       // Inner neon text/pattern
-      ctx.shadowBlur = 8 * pulse;
       ctx.fillStyle = sign.color1;
 
       // Simple decorative pattern (casino-style)
@@ -96,7 +91,6 @@ export class NeonSignBuilder {
 
       // Pole
       ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
       ctx.fillStyle = "#444466";
       ctx.fillRect(sx - 0.05 * r.zoom, sy + sh / 2, 0.1 * r.zoom, 1.5 * r.zoom);
 

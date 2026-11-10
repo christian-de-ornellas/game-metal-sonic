@@ -40,11 +40,13 @@ export function createScatteredRing(x: number, y: number): RingData {
   };
 }
 
+const RING_COLLECT_RADIUS_SQ = RING_COLLECT_RADIUS * RING_COLLECT_RADIUS;
+
 export function checkRingCollect(ring: RingData, px: number, py: number): boolean {
   if (!ring.active || ring.collected) return false;
   const dx = ring.x - px;
   const dy = ring.y - py;
-  return Math.sqrt(dx * dx + dy * dy) < RING_COLLECT_RADIUS;
+  return dx * dx + dy * dy < RING_COLLECT_RADIUS_SQ;
 }
 
 export function updateScatteredRing(ring: RingData, dt: number): boolean {
@@ -87,39 +89,15 @@ export function drawRing(r: Renderer, ring: RingData, time: number) {
   const radiusX = 0.35 * r.zoom * Math.max(scaleX, 0.15);
   const radiusY = 0.35 * r.zoom;
 
-  // Ring glow
-  ctx.save();
-  ctx.shadowColor = "#ffcc00";
-  ctx.shadowBlur = 6;
-
-  // Gold gradient
-  const grad = ctx.createRadialGradient(
-    sx - radiusX * 0.2, sy - radiusY * 0.2, radiusY * 0.1,
-    sx, sy, radiusY,
-  );
-  grad.addColorStop(0, "#fff066");
-  grad.addColorStop(0.5, "#ffcc00");
-  grad.addColorStop(1, "#cc8800");
-
-  // Draw ring as ellipse with hole
+  // Ring body - flat gold
+  ctx.fillStyle = "#ffcc00";
   ctx.beginPath();
   ctx.ellipse(sx, sy, radiusX, radiusY, 0, 0, Math.PI * 2);
-  ctx.fillStyle = grad;
   ctx.fill();
 
-  // Inner hole (dark center)
-  const holeRX = radiusX * 0.5;
-  const holeRY = radiusY * 0.5;
-  ctx.beginPath();
-  ctx.ellipse(sx, sy, holeRX, holeRY, 0, 0, Math.PI * 2);
+  // Inner hole
   ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.fill();
-
-  // Highlight
   ctx.beginPath();
-  ctx.ellipse(sx - radiusX * 0.2, sy - radiusY * 0.2, radiusX * 0.2, radiusY * 0.2, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.ellipse(sx, sy, radiusX * 0.5, radiusY * 0.5, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.restore();
 }

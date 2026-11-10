@@ -38,11 +38,7 @@ export class BowserArena {
     const ctx = renderer.ctx;
 
     // Castle background - dark stone
-    const grad = ctx.createLinearGradient(0, 0, 0, renderer.height);
-    grad.addColorStop(0, "#1a1020");
-    grad.addColorStop(0.4, "#251528");
-    grad.addColorStop(1, "#0a0508");
-    ctx.fillStyle = grad;
+    ctx.fillStyle = "#251528";
     ctx.fillRect(0, 0, renderer.width, renderer.height);
 
     // Stone wall bricks
@@ -89,11 +85,7 @@ export class BowserArena {
     const screenBottom = renderer.height;
 
     // Lava base
-    const lavaGrad = ctx.createLinearGradient(0, screenY, 0, screenBottom);
-    lavaGrad.addColorStop(0, "#ff4400");
-    lavaGrad.addColorStop(0.3, "#cc2200");
-    lavaGrad.addColorStop(1, "#661100");
-    ctx.fillStyle = lavaGrad;
+    ctx.fillStyle = "#cc2200";
     ctx.fillRect(0, screenY, renderer.width, screenBottom - screenY);
 
     // Lava surface waves
@@ -152,21 +144,10 @@ export class BowserArena {
     const flicker2 = Math.sin(phase * 1.7) * 0.2 + 0.8;
     const flameH = (1.5 + flicker1 * 0.8) * renderer.zoom;
 
-    ctx.save();
-    ctx.shadowColor = "#ff8800";
-    ctx.shadowBlur = 15 + flicker2 * 10;
-
-    const flameGrad = ctx.createRadialGradient(sx, sy - flameH * 0.3, 0, sx, sy, flameH);
-    flameGrad.addColorStop(0, "#ffee88");
-    flameGrad.addColorStop(0.3, "#ffaa22");
-    flameGrad.addColorStop(0.7, "#ff4400");
-    flameGrad.addColorStop(1, "rgba(255, 30, 0, 0)");
-
     ctx.beginPath();
     ctx.ellipse(sx, sy - flameH * 0.2, 0.5 * renderer.zoom * flicker2, flameH, 0, 0, Math.PI * 2);
-    ctx.fillStyle = flameGrad;
+    ctx.fillStyle = "#ffaa22";
     ctx.fill();
-    ctx.restore();
   }
 
   getEffectiveHeight(_x: number): number {

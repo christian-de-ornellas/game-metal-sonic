@@ -82,6 +82,7 @@ function main() {
   let marioAlly: MarioAlly | null = null;
   const projectiles = new PlayerProjectileSystem();
   let bossDefeatTimer = 0;
+  let attackModeTimer = 0;
   let bossCinematic: BossCinematic | null = null;
   let endingCinematic: EndingCinematic | null = null;
 
@@ -687,7 +688,13 @@ function main() {
     if (inputState.attackPressed) {
       projectiles.fire(controller.x, controller.y, controller.facingRight);
       controller.setAttackMode(true);
-      setTimeout(() => { if (controller) controller.setAttackMode(false); }, 300);
+      attackModeTimer = 0.3;
+    }
+    if (attackModeTimer > 0) {
+      attackModeTimer -= dt;
+      if (attackModeTimer <= 0) {
+        controller.setAttackMode(false);
+      }
     }
 
     // Update arena
@@ -1291,15 +1298,11 @@ function main() {
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.fillRect(0, 0, rw, rh);
 
-      ctx.save();
-      ctx.shadowColor = "#ffaa00";
-      ctx.shadowBlur = 15;
       renderer.drawScreenText(
         "CONGRATULATIONS!",
         rw / 2, rh / 2 - 60 * scale,
         "#ffcc00", 48 * scale, "center", "#664400"
       );
-      ctx.restore();
 
       renderer.drawScreenText(
         `FINAL SCORE: ${gameState.score}`,

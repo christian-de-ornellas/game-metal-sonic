@@ -81,10 +81,7 @@ export class PlatformBuilder {
       const sh = p.height * r.zoom;
 
       // Platform body
-      const grad = ctx.createLinearGradient(sx, sy, sx, sy + sh);
-      grad.addColorStop(0, "#667766");
-      grad.addColorStop(1, "#445544");
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#667766";
       ctx.fillRect(sx, sy, sw, sh);
 
       // Gold edge on top

@@ -4,6 +4,8 @@ export class Renderer {
   width = 0;
   height = 0;
   dpr = 1;
+  private lastFontSize = 0;
+  private lastFontStr = "";
 
   // Safe area insets (CSS pixels)
   safeTop = 0;
@@ -238,7 +240,11 @@ export class Renderer {
     align: CanvasTextAlign = "left",
     shadowColor?: string,
   ) {
-    this.ctx.font = `bold ${fontSize}px monospace`;
+    if (fontSize !== this.lastFontSize) {
+      this.lastFontSize = fontSize;
+      this.lastFontStr = `bold ${fontSize}px monospace`;
+    }
+    this.ctx.font = this.lastFontStr;
     this.ctx.textAlign = align;
     this.ctx.textBaseline = "top";
     if (shadowColor) {

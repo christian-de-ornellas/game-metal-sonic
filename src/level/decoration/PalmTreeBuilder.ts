@@ -53,10 +53,6 @@ export class PalmTreeBuilder {
 
       // Trunk
       const trunkW = 0.3 * r.zoom;
-      const trunkGrad = ctx.createLinearGradient(-trunkW, 0, trunkW, 0);
-      trunkGrad.addColorStop(0, "#5a3a18");
-      trunkGrad.addColorStop(0.5, "#8B6B3E");
-      trunkGrad.addColorStop(1, "#5a3a18");
 
       ctx.beginPath();
       ctx.moveTo(-trunkW * 1.2, 0);
@@ -64,7 +60,7 @@ export class PalmTreeBuilder {
       ctx.lineTo(trunkW * 0.6, -h);
       ctx.lineTo(trunkW * 1.2, 0);
       ctx.closePath();
-      ctx.fillStyle = trunkGrad;
+      ctx.fillStyle = "#8B6B3E";
       ctx.fill();
 
       // Trunk segments
@@ -92,15 +88,11 @@ export class PalmTreeBuilder {
         ctx.translate(0, topY);
         ctx.rotate(-droopAngle + Math.PI / 2 + leafSway * Math.sin(i * 1.7));
 
-        const leafGrad = ctx.createLinearGradient(0, 0, leafLen, 0);
-        leafGrad.addColorStop(0, "#22aa11");
-        leafGrad.addColorStop(1, "#118808");
-
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.quadraticCurveTo(leafLen * 0.5, -leafLen * 0.15, leafLen, leafLen * 0.1);
         ctx.quadraticCurveTo(leafLen * 0.5, leafLen * 0.15, 0, 0);
-        ctx.fillStyle = leafGrad;
+        ctx.fillStyle = "#22aa11";
         ctx.fill();
 
         ctx.restore();

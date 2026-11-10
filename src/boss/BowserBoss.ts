@@ -545,11 +545,7 @@ export class BowserBoss extends Boss {
     // Shell (back)
     ctx.beginPath();
     ctx.ellipse(0, -3 * z, 3 * z, 2.5 * z, 0, 0, Math.PI * 2);
-    const shellGrad = ctx.createRadialGradient(0, -3 * z, 0, 0, -3 * z, 3 * z);
-    shellGrad.addColorStop(0, "#44bb55");
-    shellGrad.addColorStop(0.7, "#228833");
-    shellGrad.addColorStop(1, "#115522");
-    ctx.fillStyle = shellGrad;
+    ctx.fillStyle = "#228833";
     ctx.fill();
     ctx.strokeStyle = "#115522";
     ctx.lineWidth = 2;
@@ -669,9 +665,6 @@ export class BowserBoss extends Boss {
     ctx.stroke();
 
     // Pupils - red glow
-    ctx.save();
-    ctx.shadowColor = `rgba(255, 0, 0, ${this.eyeGlow})`;
-    ctx.shadowBlur = 8;
     ctx.fillStyle = `rgb(${Math.floor(200 + rageColor * 55)}, ${Math.floor(40 - rageColor * 40)}, 0)`;
     ctx.beginPath();
     ctx.arc(-0.2 * z, eyeY, 0.25 * z, 0, Math.PI * 2);
@@ -679,7 +672,6 @@ export class BowserBoss extends Boss {
     ctx.beginPath();
     ctx.arc(0.9 * z, eyeY, 0.25 * z, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
 
     // Horns
     for (const hx of [-0.8, 1.0]) {
@@ -729,15 +721,9 @@ export class BowserBoss extends Boss {
       const flicker = Math.sin(this.breathPhase * 10 + i * 2) * 0.2 + 0.8;
       ctx.globalAlpha = (1 - t * 0.7) * flicker;
 
-      const fireGrad = ctx.createRadialGradient(fsx, fsy, 0, fsx, fsy, sr);
-      fireGrad.addColorStop(0, "#ffee44");
-      fireGrad.addColorStop(0.3, "#ff8800");
-      fireGrad.addColorStop(0.7, "#ff3300");
-      fireGrad.addColorStop(1, "rgba(200, 30, 0, 0)");
-
       ctx.beginPath();
       ctx.arc(fsx, fsy, sr, 0, Math.PI * 2);
-      ctx.fillStyle = fireGrad;
+      ctx.fillStyle = "#ff8800";
       ctx.fill();
     }
 
@@ -819,14 +805,9 @@ export class BowserBoss extends Boss {
 
       ctx.save();
       ctx.globalAlpha = 1 - progress;
-      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
-      grad.addColorStop(0, "#ffffff");
-      grad.addColorStop(0.2, "#ffee44");
-      grad.addColorStop(0.5, "#ff6600");
-      grad.addColorStop(1, "rgba(200, 20, 0, 0)");
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#ff6600";
       ctx.fill();
       ctx.restore();
     }

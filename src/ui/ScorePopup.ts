@@ -16,12 +16,14 @@ export class ScorePopup {
   }
 
   update(dt: number) {
-    for (let i = this.popups.length - 1; i >= 0; i--) {
+    let i = this.popups.length;
+    while (i-- > 0) {
       const p = this.popups[i];
       p.life -= dt;
       p.y += dt * 2; // float upward (world Y is up)
       if (p.life <= 0) {
-        this.popups.splice(i, 1);
+        this.popups[i] = this.popups[this.popups.length - 1];
+        this.popups.pop();
       }
     }
   }

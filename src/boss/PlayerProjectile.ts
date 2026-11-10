@@ -92,11 +92,6 @@ export class PlayerProjectileSystem {
       const sy = renderer.worldToScreenY(p.y);
       const sr = 0.4 * renderer.zoom;
 
-      // Glow
-      ctx.save();
-      ctx.shadowColor = "#44ccff";
-      ctx.shadowBlur = 15;
-
       // Trail
       const trailLen = 3;
       for (let i = 0; i < trailLen; i++) {
@@ -113,16 +108,10 @@ export class PlayerProjectileSystem {
 
       // Core ball
       ctx.globalAlpha = 1;
-      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
-      grad.addColorStop(0, "#ffffff");
-      grad.addColorStop(0.4, "#88eeff");
-      grad.addColorStop(1, "#2288cc");
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#88eeff";
       ctx.fill();
-
-      ctx.restore();
     }
   }
 

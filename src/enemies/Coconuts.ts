@@ -111,12 +111,9 @@ export class Coconuts extends Badnik {
     ctx.translate(sx, sy);
 
     // Body
-    const bodyGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 0.45 * s);
-    bodyGrad.addColorStop(0, "#ffaa44");
-    bodyGrad.addColorStop(1, "#bb6622");
     ctx.beginPath();
     ctx.ellipse(0, 0, 0.35 * s, 0.45 * s, 0, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = "#ffaa44";
     ctx.fill();
 
     // Head

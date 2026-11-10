@@ -125,10 +125,7 @@ export class BridgeBuilder {
         const sh = 0.3 * r.zoom;
 
         // Segment body
-        const segGrad = ctx.createLinearGradient(sx, sy, sx, sy + sh);
-        segGrad.addColorStop(0, "#9B6B3E");
-        segGrad.addColorStop(1, "#6B4226");
-        ctx.fillStyle = segGrad;
+        ctx.fillStyle = "#9B6B3E";
         ctx.fillRect(sx, sy, sw, sh);
 
         // Plank lines

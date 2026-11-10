@@ -340,14 +340,12 @@ export class RoboTinic extends Boss {
       const flicker = Math.sin(this.exhaustPhase + side * 2) * 0.3 + 0.7;
       const flameH = (1.5 + flicker) * renderer.zoom;
 
-      const grad = ctx.createLinearGradient(sx, sy, sx, sy + flameH);
-      grad.addColorStop(0, `rgba(255, 200, 50, ${flicker})`);
-      grad.addColorStop(0.5, `rgba(255, 100, 20, ${flicker * 0.7})`);
-      grad.addColorStop(1, "rgba(255, 50, 10, 0)");
+      ctx.globalAlpha = flicker;
       ctx.beginPath();
       ctx.ellipse(sx, sy + flameH * 0.3, 0.6 * renderer.zoom, flameH * 0.5, 0, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#ff6414";
       ctx.fill();
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -359,11 +357,7 @@ export class RoboTinic extends Boss {
     // Main hull
     ctx.beginPath();
     ctx.ellipse(sx, sy + 0.5 * renderer.zoom, 4 * renderer.zoom, 1.8 * renderer.zoom, 0, 0, Math.PI * 2);
-    const hullGrad = ctx.createLinearGradient(sx, sy - 2 * renderer.zoom, sx, sy + 2 * renderer.zoom);
-    hullGrad.addColorStop(0, "#666677");
-    hullGrad.addColorStop(0.5, "#555566");
-    hullGrad.addColorStop(1, "#3a3a44");
-    ctx.fillStyle = hullGrad;
+    ctx.fillStyle = "#555566";
     ctx.fill();
     ctx.strokeStyle = "#888899";
     ctx.lineWidth = 1.5;
@@ -417,16 +411,12 @@ export class RoboTinic extends Boss {
 
     // Red glowing eyes
     const eyeGlow = Math.sin(this.antennaPhase * 2) * 0.3 + 0.7;
-    ctx.save();
-    ctx.shadowColor = "#ff0000";
-    ctx.shadowBlur = 8;
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.arc(sx + side * 0.3 * renderer.zoom, headY - 0.1 * renderer.zoom, 0.15 * renderer.zoom, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255, 0, 0, ${eyeGlow})`;
       ctx.fill();
     }
-    ctx.restore();
 
     // Mechanical claws
     for (const side of [-1, 1]) {
@@ -460,14 +450,10 @@ export class RoboTinic extends Boss {
     // Blinking light
     const blink = Math.sin(this.antennaPhase * 3) > 0;
     if (blink) {
-      ctx.save();
-      ctx.shadowColor = "#ff4444";
-      ctx.shadowBlur = 10;
       ctx.beginPath();
       ctx.arc(sx, sy - 0.5 * renderer.zoom, 0.2 * renderer.zoom, 0, Math.PI * 2);
       ctx.fillStyle = "#ff4444";
       ctx.fill();
-      ctx.restore();
     }
   }
 
@@ -510,14 +496,10 @@ export class RoboTinic extends Boss {
       // Fuse spark
       const sparkPhase = Math.sin(b.explodeTimer * 15);
       if (sparkPhase > 0) {
-        ctx.save();
-        ctx.shadowColor = "#ffaa00";
-        ctx.shadowBlur = 5;
         ctx.beginPath();
         ctx.arc(sx, sy - sr, 0.1 * renderer.zoom, 0, Math.PI * 2);
         ctx.fillStyle = "#ffcc44";
         ctx.fill();
-        ctx.restore();
       }
     }
   }
@@ -552,16 +534,8 @@ export class RoboTinic extends Boss {
 
       ctx.save();
       ctx.globalAlpha = this.laserAlpha;
-      ctx.shadowColor = "#ff3333";
-      ctx.shadowBlur = 20;
 
-      const grad = ctx.createLinearGradient(0, sy - beamH, 0, sy + beamH);
-      grad.addColorStop(0, "rgba(255, 50, 50, 0)");
-      grad.addColorStop(0.3, "rgba(255, 100, 100, 0.5)");
-      grad.addColorStop(0.5, "rgba(255, 200, 200, 1)");
-      grad.addColorStop(0.7, "rgba(255, 100, 100, 0.5)");
-      grad.addColorStop(1, "rgba(255, 50, 50, 0)");
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "rgba(255, 200, 200, 1)";
       ctx.fillRect(sx1, sy - beamH, sx2 - sx1, beamH * 2);
 
       ctx.restore();
@@ -586,14 +560,9 @@ export class RoboTinic extends Boss {
 
       ctx.save();
       ctx.globalAlpha = 1 - progress;
-      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
-      grad.addColorStop(0, "#ffffff");
-      grad.addColorStop(0.3, "#ffcc44");
-      grad.addColorStop(0.6, "#ff6600");
-      grad.addColorStop(1, "rgba(255, 30, 0, 0)");
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#ff6600";
       ctx.fill();
       ctx.restore();
     }

@@ -79,12 +79,9 @@ export class Spiny extends Badnik {
     ctx.translate(sx, sy);
 
     // Body (dark blue armored ball)
-    const bodyGrad = ctx.createRadialGradient(-0.05 * s, -0.1 * s, 0.05 * s, 0, 0, 0.4 * s);
-    bodyGrad.addColorStop(0, "#4455cc");
-    bodyGrad.addColorStop(1, "#222266");
     ctx.beginPath();
     ctx.arc(0, -0.15 * s, 0.4 * s, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = "#4455cc";
     ctx.fill();
 
     // Spines on top (red, dangerous!)

@@ -53,16 +53,9 @@ export function drawMetalSonic(
 function drawBody(ctx: CanvasRenderingContext2D, s: number) {
   const bw = s * 0.45;
   const bh = s * 0.5;
-  const grad = ctx.createRadialGradient(
-    -bw * 0.15, -s * 0.2 - bh * 0.2, bw * 0.15,
-    0, -s * 0.2, bh,
-  );
-  grad.addColorStop(0, "#6699ff");
-  grad.addColorStop(0.6, "#2255cc");
-  grad.addColorStop(1, "#112266");
   ctx.beginPath();
   ctx.ellipse(0, -s * 0.2, bw, bh, 0, 0, Math.PI * 2);
-  ctx.fillStyle = grad;
+  ctx.fillStyle = "#2255cc";
   ctx.fill();
 
   ctx.beginPath();
@@ -75,35 +68,18 @@ function drawHead(ctx: CanvasRenderingContext2D, s: number, breathY: number) {
   const headY = -s * 0.65 + breathY;
   const headR = s * 0.32;
 
-  const hGrad = ctx.createRadialGradient(
-    -headR * 0.25, headY - headR * 0.3, headR * 0.1,
-    0, headY, headR,
-  );
-  hGrad.addColorStop(0, "#5588ee");
-  hGrad.addColorStop(0.7, "#2244aa");
-  hGrad.addColorStop(1, "#111844");
+  // Head - flat color
   ctx.beginPath();
   ctx.arc(0, headY, headR, 0, Math.PI * 2);
-  ctx.fillStyle = hGrad;
+  ctx.fillStyle = "#2244aa";
   ctx.fill();
 
-  // Visor
-  ctx.save();
-  ctx.shadowColor = "#ff3333";
-  ctx.shadowBlur = 8;
-  const visorGrad = ctx.createLinearGradient(
-    -headR * 0.6, headY - headR * 0.1,
-    headR * 0.6, headY + headR * 0.1,
-  );
-  visorGrad.addColorStop(0, "#ff1111");
-  visorGrad.addColorStop(0.5, "#ff4444");
-  visorGrad.addColorStop(1, "#cc0000");
+  // Visor - no shadow, flat color
   ctx.beginPath();
   ctx.ellipse(headR * 0.15, headY, headR * 0.7, headR * 0.22, 0, -0.3, Math.PI * 0.6);
   ctx.lineWidth = s * 0.06;
-  ctx.strokeStyle = visorGrad;
+  ctx.strokeStyle = "#ff3333";
   ctx.stroke();
-  ctx.restore();
 
   // Eye highlight
   ctx.beginPath();
@@ -122,17 +98,12 @@ function drawSpike(ctx: CanvasRenderingContext2D, s: number, headY: number, offs
   ctx.translate(-s * 0.15, headY + offsetY);
   ctx.rotate(angle);
 
-  const grad = ctx.createLinearGradient(0, 0, -length, 0);
-  grad.addColorStop(0, "#ffcc33");
-  grad.addColorStop(0.5, "#ddaa11");
-  grad.addColorStop(1, "#996600");
-
   ctx.beginPath();
   ctx.moveTo(0, -s * 0.04);
   ctx.lineTo(-length, 0);
   ctx.lineTo(0, s * 0.04);
   ctx.closePath();
-  ctx.fillStyle = grad;
+  ctx.fillStyle = "#ddaa11";
   ctx.fill();
   ctx.restore();
 }
@@ -180,12 +151,9 @@ function drawLeg(ctx: CanvasRenderingContext2D, s: number, offsetX: number, angl
   ctx.fillStyle = "#333344";
   ctx.fill();
 
-  const footGrad = ctx.createLinearGradient(0, s * 0.38, 0, s * 0.46);
-  footGrad.addColorStop(0, "#ee2222");
-  footGrad.addColorStop(1, "#aa0000");
   ctx.beginPath();
   ctx.ellipse(s * 0.02, s * 0.42, s * 0.08, s * 0.05, 0, 0, Math.PI * 2);
-  ctx.fillStyle = footGrad;
+  ctx.fillStyle = "#cc1111";
   ctx.fill();
 
   ctx.restore();
@@ -220,19 +188,13 @@ function drawJetEngine(ctx: CanvasRenderingContext2D, s: number, phase: number) 
 function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number) {
   const radius = s * 0.45;
 
-  const grad = ctx.createRadialGradient(
-    -radius * 0.2, -radius * 0.2, radius * 0.1,
-    0, 0, radius,
-  );
-  grad.addColorStop(0, "#5588ee");
-  grad.addColorStop(0.6, "#2244aa");
-  grad.addColorStop(1, "#111844");
-
+  // Flat blue ball
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fillStyle = grad;
+  ctx.fillStyle = "#2244aa";
   ctx.fill();
 
+  // Spin lines
   ctx.save();
   ctx.rotate(angle);
   ctx.strokeStyle = "rgba(150,200,255,0.5)";
@@ -244,9 +206,4 @@ function drawSpinBall(ctx: CanvasRenderingContext2D, s: number, angle: number) {
     ctx.stroke();
   }
   ctx.restore();
-
-  ctx.beginPath();
-  ctx.arc(-radius * 0.15, -radius * 0.15, radius * 0.15, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255,255,255,0.2)";
-  ctx.fill();
 }

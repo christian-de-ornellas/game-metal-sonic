@@ -59,27 +59,10 @@ export class BumperBuilder {
       const sr = b.radius * r.zoom;
       const isHit = b.hitTimer > 0;
 
-      // Neon glow
-      ctx.save();
-      const glowIntensity = isHit ? 20 : 8 + Math.sin(this.time * 4 + b.x) * 3;
-      ctx.shadowColor = isHit ? "#ff44ff" : "#ff88cc";
-      ctx.shadowBlur = glowIntensity;
-
       // Outer ring
-      const grad = ctx.createRadialGradient(sx, sy, sr * 0.3, sx, sy, sr);
-      if (isHit) {
-        grad.addColorStop(0, "#ffffff");
-        grad.addColorStop(0.5, "#ff88ff");
-        grad.addColorStop(1, "#ff44aa");
-      } else {
-        grad.addColorStop(0, "#ffccee");
-        grad.addColorStop(0.5, "#ff66aa");
-        grad.addColorStop(1, "#cc3377");
-      }
-
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = isHit ? "#ff88ff" : "#ff66aa";
       ctx.fill();
 
       // Inner circle highlight
@@ -94,8 +77,6 @@ export class BumperBuilder {
       ctx.strokeStyle = isHit ? "#ffff00" : "#ffcc44";
       ctx.lineWidth = Math.max(1, 0.06 * r.zoom);
       ctx.stroke();
-
-      ctx.restore();
     }
   }
 }

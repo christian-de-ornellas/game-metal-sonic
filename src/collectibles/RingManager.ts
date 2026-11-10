@@ -55,10 +55,12 @@ export class RingManager {
       }
     }
 
-    for (let i = this.scatteredRings.length - 1; i >= 0; i--) {
+    let i = this.scatteredRings.length;
+    while (i-- > 0) {
       const ring = this.scatteredRings[i];
       if (!updateScatteredRing(ring, dt)) {
-        this.scatteredRings.splice(i, 1);
+        this.scatteredRings[i] = this.scatteredRings[this.scatteredRings.length - 1];
+        this.scatteredRings.pop();
         continue;
       }
 
@@ -67,7 +69,8 @@ export class RingManager {
         if (checkRingCollect(ring, playerX, playerY)) {
           ring.collected = true;
           ring.active = false;
-          this.scatteredRings.splice(i, 1);
+          this.scatteredRings[i] = this.scatteredRings[this.scatteredRings.length - 1];
+          this.scatteredRings.pop();
           this.gameState.addRings(1);
           collected = true;
         }

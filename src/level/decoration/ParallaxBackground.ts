@@ -16,28 +16,19 @@ interface Star {
   twinkleOffset: number;
 }
 
-interface Bird {
-  x: number;
-  y: number;
-  speed: number;
-  flapPhase: number;
-  flapSpeed: number;
-}
-
 export interface BackgroundTheme {
   skyGradient: { stop: number; color: string }[];
-  mountainLayers: { parallax: number; yParallax: number; color1: string; color2: string; scale: number }[];
+  skyFallbackColor: string;
+  mountainLayers: { parallax: number; yParallax: number; color: string; scale: number }[];
   bushColor: string;
   cloudEnabled: boolean;
   starsEnabled?: boolean;
-  birdsEnabled?: boolean;
   neonEnabled?: boolean;
 }
 
 export class ParallaxBackground {
   private clouds: Cloud[] = [];
   private stars: Star[] = [];
-  private birds: Bird[] = [];
   private time = 0;
   private theme: BackgroundTheme;
 
@@ -45,7 +36,7 @@ export class ParallaxBackground {
     this.theme = theme ?? ParallaxBackground.emeraldHillTheme();
 
     if (this.theme.cloudEnabled) {
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 12; i++) {
         this.clouds.push({
           x: Math.random() * 600 - 100,
           y: 20 + Math.random() * 25,
@@ -57,25 +48,13 @@ export class ParallaxBackground {
     }
 
     if (this.theme.starsEnabled) {
-      for (let i = 0; i < 80; i++) {
+      for (let i = 0; i < 30; i++) {
         this.stars.push({
           x: Math.random() * 800,
           y: Math.random() * 50 + 5,
           size: 0.5 + Math.random() * 1.5,
           twinkleSpeed: 1 + Math.random() * 3,
           twinkleOffset: Math.random() * Math.PI * 2,
-        });
-      }
-    }
-
-    if (this.theme.birdsEnabled) {
-      for (let i = 0; i < 5; i++) {
-        this.birds.push({
-          x: Math.random() * 500,
-          y: 25 + Math.random() * 15,
-          speed: 1 + Math.random() * 2,
-          flapPhase: Math.random() * Math.PI * 2,
-          flapSpeed: 5 + Math.random() * 3,
         });
       }
     }
@@ -89,15 +68,14 @@ export class ParallaxBackground {
         { stop: 0.7, color: "#88ddff" },
         { stop: 1, color: "#aaeeff" },
       ],
+      skyFallbackColor: "#66bbee",
       mountainLayers: [
-        { parallax: 0.05, yParallax: 0.03, color1: "#6688bb", color2: "#557799", scale: 0.3 },
-        { parallax: 0.1, yParallax: 0.05, color1: "#5577aa", color2: "#446688", scale: 0.4 },
-        { parallax: 0.2, yParallax: 0.08, color1: "#558855", color2: "#447744", scale: 0.5 },
-        { parallax: 0.3, yParallax: 0.1, color1: "#447744", color2: "#336633", scale: 0.6 },
+        { parallax: 0.1, yParallax: 0.05, color: "#5577aa", scale: 0.4 },
+        { parallax: 0.2, yParallax: 0.08, color: "#558855", scale: 0.5 },
+        { parallax: 0.3, yParallax: 0.1, color: "#447744", scale: 0.6 },
       ],
       bushColor: "#228833",
       cloudEnabled: true,
-      birdsEnabled: true,
     };
   }
 
@@ -109,11 +87,11 @@ export class ParallaxBackground {
         { stop: 0.7, color: "#3a3066" },
         { stop: 1, color: "#4a3a77" },
       ],
+      skyFallbackColor: "#2a2a55",
       mountainLayers: [
-        { parallax: 0.05, yParallax: 0.03, color1: "#222244", color2: "#1a1a33", scale: 0.3 },
-        { parallax: 0.1, yParallax: 0.05, color1: "#333355", color2: "#222244", scale: 0.4 },
-        { parallax: 0.2, yParallax: 0.08, color1: "#3a3a5a", color2: "#2a2a4a", scale: 0.5 },
-        { parallax: 0.3, yParallax: 0.1, color1: "#444466", color2: "#333355", scale: 0.6 },
+        { parallax: 0.1, yParallax: 0.05, color: "#333355", scale: 0.4 },
+        { parallax: 0.2, yParallax: 0.08, color: "#3a3a5a", scale: 0.5 },
+        { parallax: 0.3, yParallax: 0.1, color: "#444466", scale: 0.6 },
       ],
       bushColor: "#333355",
       cloudEnabled: false,
@@ -128,10 +106,10 @@ export class ParallaxBackground {
         { stop: 0.6, color: "#1a0044" },
         { stop: 1, color: "#220055" },
       ],
+      skyFallbackColor: "#110033",
       mountainLayers: [
-        { parallax: 0.05, yParallax: 0.03, color1: "#0a0a22", color2: "#050511", scale: 0.3 },
-        { parallax: 0.1, yParallax: 0.05, color1: "#111133", color2: "#0a0a22", scale: 0.4 },
-        { parallax: 0.25, yParallax: 0.1, color1: "#1a1a44", color2: "#111133", scale: 0.55 },
+        { parallax: 0.1, yParallax: 0.05, color: "#111133", scale: 0.4 },
+        { parallax: 0.25, yParallax: 0.1, color: "#1a1a44", scale: 0.55 },
       ],
       bushColor: "#111133",
       cloudEnabled: false,
@@ -146,11 +124,6 @@ export class ParallaxBackground {
       cloud.x += cloud.speed * dt;
       if (cloud.x > 500) cloud.x = -50;
     }
-    for (const bird of this.birds) {
-      bird.x += bird.speed * dt;
-      bird.flapPhase += bird.flapSpeed * dt;
-      if (bird.x > 500) bird.x = -20;
-    }
   }
 
   render(r: Renderer) {
@@ -158,12 +131,8 @@ export class ParallaxBackground {
     const cameraX = r.cameraX;
     const cameraY = r.cameraY;
 
-    // Layer 0: Sky gradient (static, fills screen)
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, r.height);
-    for (const s of this.theme.skyGradient) {
-      skyGrad.addColorStop(s.stop, s.color);
-    }
-    ctx.fillStyle = skyGrad;
+    // Sky - flat color (no gradient)
+    ctx.fillStyle = this.theme.skyFallbackColor;
     ctx.fillRect(0, 0, r.width, r.height);
 
     // Stars (for night themes)
@@ -173,7 +142,7 @@ export class ParallaxBackground {
 
     // Mountain layers
     for (const layer of this.theme.mountainLayers) {
-      this.drawMountains(r, cameraX * layer.parallax, cameraY * layer.yParallax, layer.color1, layer.color2, layer.scale);
+      this.drawMountains(r, cameraX * layer.parallax, cameraY * layer.yParallax, layer.color, layer.scale);
     }
 
     // Neon city glow (Casino Night)
@@ -186,25 +155,20 @@ export class ParallaxBackground {
       this.drawClouds(r, cameraX * 0.15);
     }
 
-    // Birds
-    if (this.theme.birdsEnabled) {
-      this.drawBirds(r, cameraX * 0.2);
-    }
-
     // Bushes/vegetation
     this.drawBushes(r, cameraX * 0.5, cameraY * 0.2);
   }
 
   private drawStars(r: Renderer, offsetX: number) {
     const ctx = r.ctx;
+    ctx.fillStyle = "#ffffff";
     for (const star of this.stars) {
       const sx = (star.x - offsetX) * r.zoom * 0.3;
-      const sy = r.height * 0.05 + (50 - star.y) * r.zoom * 0.2;
       if (sx < -10 || sx > r.width + 10) continue;
+      const sy = r.height * 0.05 + (50 - star.y) * r.zoom * 0.2;
 
       const twinkle = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(this.time * star.twinkleSpeed + star.twinkleOffset));
       ctx.globalAlpha = twinkle;
-      ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.arc(sx, sy, star.size, 0, Math.PI * 2);
       ctx.fill();
@@ -223,51 +187,17 @@ export class ParallaxBackground {
       if (sx < -60 || sx > r.width + 60) continue;
 
       const pulse = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(this.time * (2 + i * 0.3) + i));
-      const color = colors[i % colors.length];
 
-      ctx.save();
       ctx.globalAlpha = pulse * 0.15;
-      ctx.fillStyle = color;
+      ctx.fillStyle = colors[i % colors.length];
       ctx.beginPath();
       ctx.arc(sx, baseY - 40 - i * 5, 30 + Math.sin(this.time + i) * 10, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
+    ctx.globalAlpha = 1;
   }
 
-  private drawBirds(r: Renderer, offsetX: number) {
-    const ctx = r.ctx;
-    for (const bird of this.birds) {
-      const sx = (bird.x - offsetX) * r.zoom * 0.4;
-      const sy = r.height * 0.15 + (40 - bird.y) * r.zoom * 0.3;
-      if (sx < -20 || sx > r.width + 20) continue;
-
-      const wingAngle = Math.sin(bird.flapPhase) * 0.5;
-      const size = 4 * r.zoom * 0.1;
-
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.strokeStyle = "#2a2a2a";
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = "round";
-
-      // Left wing
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(-size, -size * wingAngle * 2, -size * 2, -size * wingAngle);
-      ctx.stroke();
-
-      // Right wing
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(size, -size * wingAngle * 2, size * 2, -size * wingAngle);
-      ctx.stroke();
-
-      ctx.restore();
-    }
-  }
-
-  private drawMountains(r: Renderer, offsetX: number, offsetY: number, color1: string, color2: string, scale: number) {
+  private drawMountains(r: Renderer, offsetX: number, offsetY: number, color: string, scale: number) {
     const ctx = r.ctx;
     const baseY = r.height * 0.55 - offsetY * r.zoom * 0.3;
     const mountainWidth = 120 * scale;
@@ -275,7 +205,7 @@ export class ParallaxBackground {
     ctx.beginPath();
     ctx.moveTo(0, r.height);
 
-    for (let sx = -mountainWidth; sx <= r.width + mountainWidth; sx += 2) {
+    for (let sx = -mountainWidth; sx <= r.width + mountainWidth; sx += 6) {
       const worldX = sx / (r.zoom * scale) + offsetX;
       const h1 = Math.sin(worldX * 0.015) * 80 * scale;
       const h2 = Math.sin(worldX * 0.008 + 1.5) * 120 * scale;
@@ -286,46 +216,32 @@ export class ParallaxBackground {
 
     ctx.lineTo(r.width + mountainWidth, r.height);
     ctx.closePath();
-
-    const grad = ctx.createLinearGradient(0, baseY - 200 * scale, 0, baseY + 50);
-    grad.addColorStop(0, color1);
-    grad.addColorStop(1, color2);
-    ctx.fillStyle = grad;
+    ctx.fillStyle = color;
     ctx.fill();
   }
 
   private drawClouds(r: Renderer, offsetX: number) {
     const ctx = r.ctx;
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = "#ffffff";
 
     for (const cloud of this.clouds) {
       const sx = (cloud.x - offsetX) * r.zoom * 0.5;
-      const sy = r.height * 0.15 + (45 - cloud.y) * r.zoom * 0.3;
-
       if (sx < -200 || sx > r.width + 200) continue;
+      const sy = r.height * 0.15 + (45 - cloud.y) * r.zoom * 0.3;
 
       const cw = cloud.width * r.zoom * 0.8;
       const ch = cloud.height * r.zoom * 0.8;
 
-      ctx.save();
-      ctx.globalAlpha = 0.7;
-
-      ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.ellipse(sx, sy, cw * 0.5, ch * 0.4, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(sx - cw * 0.3, sy + ch * 0.1, cw * 0.35, ch * 0.35, 0, 0, Math.PI * 2);
+      ctx.ellipse(sx + cw * 0.2, sy + ch * 0.05, cw * 0.4, ch * 0.3, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(sx + cw * 0.3, sy + ch * 0.05, cw * 0.4, ch * 0.3, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Extra puff for richer clouds
-      ctx.beginPath();
-      ctx.ellipse(sx + cw * 0.1, sy - ch * 0.2, cw * 0.3, ch * 0.25, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
     }
+
+    ctx.globalAlpha = 1;
   }
 
   private drawBushes(r: Renderer, offsetX: number, offsetY: number) {
@@ -334,7 +250,7 @@ export class ParallaxBackground {
 
     ctx.fillStyle = this.theme.bushColor;
 
-    for (let sx = -20; sx <= r.width + 20; sx += 8) {
+    for (let sx = -20; sx <= r.width + 20; sx += 16) {
       const worldX = sx / (r.zoom * 0.5) + offsetX;
       const bushH = (15 + Math.sin(worldX * 0.3) * 8 + Math.sin(worldX * 0.7) * 5);
 
@@ -343,7 +259,6 @@ export class ParallaxBackground {
       ctx.fill();
     }
 
-    ctx.fillStyle = this.theme.bushColor;
     ctx.fillRect(0, baseY, r.width, r.height - baseY);
   }
 }

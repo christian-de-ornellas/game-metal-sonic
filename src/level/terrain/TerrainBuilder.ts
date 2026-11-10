@@ -84,50 +84,14 @@ export class TerrainBuilder {
     ctx.lineTo(r.worldToScreenX(endX), screenBottom);
     ctx.closePath();
 
-    // Fill with gradient
-    const topScreenY = r.worldToScreenY(5);
-    const bottomScreenY = r.worldToScreenY(-10);
-    const fillGrad = ctx.createLinearGradient(0, topScreenY, 0, bottomScreenY);
-    for (const s of this.theme.surfaceGradient) {
-      fillGrad.addColorStop(s.stop, s.color);
-    }
-    ctx.fillStyle = fillGrad;
+    // Fill with primary surface color (no gradient)
+    ctx.fillStyle = this.theme.surfaceGradient[1]?.color ?? this.theme.surfaceGradient[0].color;
     ctx.fill();
 
-    // Draw checker pattern (horizontal stripes)
-    this.drawCheckerPattern(r, startX, endX);
-
-    // Grass tufts on top
+    // Grass tufts on top (batched into single stroke)
     if (this.theme.grassEnabled) {
       this.drawGrass(r, startX, endX);
     }
-  }
-
-  private drawCheckerPattern(r: Renderer, startX: number, endX: number) {
-    const ctx = r.ctx;
-    const stripeHeight = 1.5; // world units
-    const stripeWidth = 2; // world units
-
-    ctx.save();
-    ctx.globalAlpha = 0.25;
-
-    for (let x = startX; x <= endX; x += stripeWidth) {
-      const h = this.heightFn(x);
-      const col = Math.floor(x / stripeWidth);
-      for (let row = 0; row < 6; row++) {
-        if ((col + row) % 2 === 0) {
-          const y = h - row * stripeHeight;
-          const sx = r.worldToScreenX(x);
-          const sy = r.worldToScreenY(y);
-          const sw = stripeWidth * r.zoom;
-          const sh = stripeHeight * r.zoom;
-          ctx.fillStyle = this.theme.checkerColor;
-          ctx.fillRect(sx, sy, sw, sh);
-        }
-      }
-    }
-
-    ctx.restore();
   }
 
   private drawGrass(r: Renderer, startX: number, endX: number) {
@@ -135,17 +99,17 @@ export class TerrainBuilder {
     ctx.strokeStyle = this.theme.grassColor;
     ctx.lineWidth = Math.max(1, r.zoom * 0.04);
 
-    for (let x = startX; x <= endX; x += 0.3) {
+    ctx.beginPath();
+    for (let x = startX; x <= endX; x += 0.8) {
       const h = this.heightFn(x);
       const sx = r.worldToScreenX(x);
       const sy = r.worldToScreenY(h);
       const grassH = (2 + Math.sin(x * 7) * 1.5) * r.zoom * 0.05;
 
-      ctx.beginPath();
       ctx.moveTo(sx, sy);
       ctx.lineTo(sx + Math.sin(x * 3) * r.zoom * 0.03, sy - grassH);
-      ctx.stroke();
     }
+    ctx.stroke();
   }
 }
 

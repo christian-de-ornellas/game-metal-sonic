@@ -99,19 +99,13 @@ export class Grabber extends Badnik {
     ctx.fillRect(sx - 0.3 * s, ceilingSy, 0.6 * s, 0.2 * s);
 
     // Body (robot claw)
-    const bodyGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 0.4 * s);
-    bodyGrad.addColorStop(0, "#aa4444");
-    bodyGrad.addColorStop(1, "#882222");
     ctx.beginPath();
     ctx.arc(sx, sy, 0.4 * s, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = "#aa4444";
     ctx.fill();
 
     // Eyes
-    ctx.save();
     const eyeGlow = this.state === "dropping" ? "#ff0000" : "#ff4444";
-    ctx.shadowColor = "#ff0000";
-    ctx.shadowBlur = this.state === "dropping" ? 8 : 3;
     ctx.fillStyle = eyeGlow;
     ctx.beginPath();
     ctx.arc(sx - 0.12 * s, sy - 0.05 * s, 0.06 * s, 0, Math.PI * 2);
@@ -119,7 +113,6 @@ export class Grabber extends Badnik {
     ctx.beginPath();
     ctx.arc(sx + 0.12 * s, sy - 0.05 * s, 0.06 * s, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
 
     // Claws (open when dropping)
     const clawOpen = this.state === "dropping" ? 0.4 : 0.15;

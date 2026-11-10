@@ -74,22 +74,15 @@ export class Crawl extends Badnik {
     ctx.translate(sx, sy);
 
     // Body (armored)
-    const bodyGrad = ctx.createRadialGradient(-0.05 * s, -0.05 * s, 0.05 * s, 0, 0, 0.45 * s);
-    bodyGrad.addColorStop(0, "#888899");
-    bodyGrad.addColorStop(1, "#555566");
     ctx.beginPath();
     ctx.ellipse(0, -0.1 * s, 0.4 * s, 0.35 * s, 0, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = "#888899";
     ctx.fill();
 
     // Shield on top (silver dome)
     ctx.beginPath();
     ctx.ellipse(0, -0.35 * s, 0.35 * s, 0.2 * s, 0, Math.PI, 0);
-    const shieldGrad = ctx.createLinearGradient(0, -0.55 * s, 0, -0.35 * s);
-    shieldGrad.addColorStop(0, "#ccccdd");
-    shieldGrad.addColorStop(0.5, "#aaaacc");
-    shieldGrad.addColorStop(1, "#8888aa");
-    ctx.fillStyle = shieldGrad;
+    ctx.fillStyle = "#aaaacc";
     ctx.fill();
 
     // Shield spikes
@@ -106,16 +99,12 @@ export class Crawl extends Badnik {
 
     // Eyes (mean)
     ctx.fillStyle = "#ff3333";
-    ctx.save();
-    ctx.shadowColor = "#ff0000";
-    ctx.shadowBlur = 4;
     ctx.beginPath();
     ctx.arc(0.1 * s * dir, -0.15 * s, 0.06 * s, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
     ctx.arc(0.22 * s * dir, -0.12 * s, 0.05 * s, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
 
     // Treads/wheels
     ctx.fillStyle = "#444455";

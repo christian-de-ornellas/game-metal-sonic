@@ -13,6 +13,7 @@ interface Particle {
   r: number;
   g: number;
   b: number;
+  colorStr: string;
   alpha: number;
   alphaEnd: number;
   gravity: number;
@@ -53,6 +54,7 @@ export class ParticleSystem {
         life: 0, maxLife: 1,
         size: 0, sizeEnd: 0,
         r: 255, g: 255, b: 255,
+        colorStr: "rgb(255,255,255)",
         alpha: 1, alphaEnd: 0,
         gravity: 0, friction: 0,
       });
@@ -92,6 +94,7 @@ export class ParticleSystem {
       p.r = config.r;
       p.g = config.g;
       p.b = config.b;
+      p.colorStr = `rgb(${config.r},${config.g},${config.b})`;
       p.alpha = config.alpha ?? 1;
       p.alphaEnd = config.alphaEnd ?? 0;
       p.gravity = config.gravity ?? -10;
@@ -147,7 +150,7 @@ export class ParticleSystem {
       const sr = size * r.zoom;
 
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = `rgb(${p.r},${p.g},${p.b})`;
+      ctx.fillStyle = p.colorStr;
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
       ctx.fill();

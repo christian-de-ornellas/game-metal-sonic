@@ -143,15 +143,9 @@ export class BuzzBomber extends Badnik {
     ctx.restore();
 
     // Body (oval)
-    const bodyGrad = ctx.createRadialGradient(
-      -0.1 * s, -0.1 * s, 0.05 * s,
-      0, 0, 0.5 * s,
-    );
-    bodyGrad.addColorStop(0, "#ffaa44");
-    bodyGrad.addColorStop(1, "#cc6622");
     ctx.beginPath();
     ctx.ellipse(0, 0, 0.5 * s, 0.3 * s, 0, 0, Math.PI * 2);
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = "#ffaa44";
     ctx.fill();
 
     // Head
@@ -161,15 +155,11 @@ export class BuzzBomber extends Badnik {
     ctx.fill();
 
     // Eyes (red, brighter when diving)
-    ctx.save();
     const eyeColor = this.buzzState === "diving" ? "#ff0000" : "#ff2222";
-    ctx.shadowColor = "#ff0000";
-    ctx.shadowBlur = this.buzzState === "diving" ? 8 : 4;
     ctx.beginPath();
     ctx.arc(0.38 * s * dir, -0.15 * s, 0.06 * s, 0, Math.PI * 2);
     ctx.fillStyle = eyeColor;
     ctx.fill();
-    ctx.restore();
 
     // Stinger
     ctx.beginPath();

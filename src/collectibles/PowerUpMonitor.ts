@@ -98,8 +98,6 @@ export class PowerUpMonitor {
       const glowAlpha = 0.3 + Math.sin(this.time * 3 + m.animPhase) * 0.15;
       ctx.save();
       ctx.globalAlpha = glowAlpha;
-      ctx.shadowColor = "#ffffff";
-      ctx.shadowBlur = 6;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1;
       ctx.strokeRect(sx - boxW / 2, sy - boxH / 2, boxW, boxH);

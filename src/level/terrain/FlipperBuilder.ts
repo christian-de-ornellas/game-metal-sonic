@@ -87,10 +87,7 @@ export class FlipperBuilder {
       ctx.rotate(-flipAngle * dir);
 
       // Flipper body
-      const flipGrad = ctx.createLinearGradient(0, -0.15 * r.zoom, 0, 0.15 * r.zoom);
-      flipGrad.addColorStop(0, "#ff8844");
-      flipGrad.addColorStop(1, "#cc5522");
-      ctx.fillStyle = flipGrad;
+      ctx.fillStyle = "#ff8844";
 
       // Tapered shape
       ctx.beginPath();
@@ -114,8 +111,6 @@ export class FlipperBuilder {
       if (f.flipPhase === "launching") {
         ctx.save();
         ctx.globalAlpha = 0.5;
-        ctx.shadowColor = "#ffaa00";
-        ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.moveTo(0, -0.2 * r.zoom);
         ctx.lineTo(sw * dir, -0.1 * r.zoom);

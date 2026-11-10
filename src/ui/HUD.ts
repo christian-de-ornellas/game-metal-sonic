@@ -60,15 +60,11 @@ export class HUD {
 
       const ctx = r.ctx;
       ctx.globalAlpha = alpha;
-      ctx.save();
-      ctx.shadowColor = "#000044";
-      ctx.shadowBlur = 8;
       r.drawScreenText(
         this.zoneName,
         w / 2 + slideOffset, safeTop + pad + fontSize + 30,
         "#4488ff", isSmall ? 24 : 36, "center", "#000044"
       );
-      ctx.restore();
       ctx.globalAlpha = 1;
     }
 
@@ -141,10 +137,7 @@ export class HUD {
     // Fill
     const fillW = barW * progress;
     if (fillW > 0) {
-      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-      grad.addColorStop(0, "#4488ff");
-      grad.addColorStop(1, "#44ff88");
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#4488ff";
       ctx.beginPath();
       ctx.roundRect(barX, barY, fillW, barH, 3);
       ctx.fill();
