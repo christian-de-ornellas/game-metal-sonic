@@ -53,13 +53,23 @@ export class CharacterSelect {
 
     window.addEventListener("keydown", this.keyHandler);
 
-    window.addEventListener("click", (e) => {
+    const handlePointer = (e: MouseEvent | TouchEvent) => {
       if (!this.visible) return;
-      const canvas = (e.target as HTMLElement).closest("canvas");
+      const target = e.target as HTMLElement;
+      const canvas = target.closest("canvas") ?? (target.tagName === "CANVAS" ? target : null);
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
+      let cx: number, cy: number;
+      if ("changedTouches" in e && e.changedTouches.length > 0) {
+        const t = e.changedTouches[0];
+        cx = t.clientX - rect.left;
+        cy = t.clientY - rect.top;
+      } else if ("clientX" in e) {
+        cx = (e as MouseEvent).clientX - rect.left;
+        cy = (e as MouseEvent).clientY - rect.top;
+      } else {
+        return;
+      }
 
       for (const slot of this.slotRects) {
         if (cx >= slot.x && cx <= slot.x + slot.w && cy >= slot.y && cy <= slot.y + slot.h) {
@@ -71,7 +81,10 @@ export class CharacterSelect {
           return;
         }
       }
-    });
+    };
+
+    window.addEventListener("click", handlePointer);
+    window.addEventListener("touchend", handlePointer, { passive: true });
   }
 
   get currentPendingAction(): PendingAction {

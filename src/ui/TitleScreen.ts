@@ -27,23 +27,37 @@ export class TitleScreen {
       }
     });
 
-    window.addEventListener("click", (e) => {
+    const handlePointer = (e: MouseEvent | TouchEvent) => {
       if (!this.visible) return;
 
-      // Check if click is on the website link
+      // Check if click/tap is on the website link
       if (this.canvas && !this.isGameOver) {
-        const rect = this.canvas.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
+        let cx: number, cy: number;
+        if ("changedTouches" in e && e.changedTouches.length > 0) {
+          const t = e.changedTouches[0];
+          const rect = this.canvas.getBoundingClientRect();
+          cx = t.clientX - rect.left;
+          cy = t.clientY - rect.top;
+        } else if ("clientX" in e) {
+          const rect = this.canvas.getBoundingClientRect();
+          cx = (e as MouseEvent).clientX - rect.left;
+          cy = (e as MouseEvent).clientY - rect.top;
+        } else {
+          this.start();
+          return;
+        }
         const b = this.linkBounds;
-        if (clickX >= b.x && clickX <= b.x + b.w && clickY >= b.y && clickY <= b.y + b.h) {
+        if (cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h) {
           window.open("https://possidonio.com", "_blank");
           return;
         }
       }
 
       this.start();
-    });
+    };
+
+    window.addEventListener("click", handlePointer);
+    window.addEventListener("touchend", handlePointer, { passive: true });
   }
 
   private start() {
