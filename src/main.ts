@@ -311,6 +311,7 @@ function main() {
 
   function applyDamage(sourceX: number) {
     if (!controller || !level) return;
+    if (gameState.superForm) return; // Super form: fully invincible
     const ringsLost = gameState.rings;
     controller.takeDamage(sourceX);
     if (ringsLost > 0) {
@@ -328,6 +329,7 @@ function main() {
 
   function applyBossDamage(sourceX: number) {
     if (!controller) return;
+    if (gameState.superForm) return; // Super form: fully invincible
     controller.takeDamage(sourceX);
     shakeAmount = 5;
     shakeDuration = 0.2;
@@ -826,7 +828,8 @@ function main() {
     }
 
     // Boss damages player (body collision)
-    if (!gameState.invincible && currentBoss.checkDamageToPlayer(controller.x, controller.y) &&
+    if (!gameState.invincible && !gameState.superForm &&
+        currentBoss.checkDamageToPlayer(controller.x, controller.y) &&
         !controller.isAttacking() && controller.state !== SonicState.HURT) {
       applyBossDamage(currentBoss.x);
     }
@@ -834,10 +837,10 @@ function main() {
     // Boss-specific hazards
     if (phase === "boss_robo_tinic" && currentBoss instanceof RoboTinic) {
       const boss = currentBoss as RoboTinic;
-      if (boss.isBombNear(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible) {
+      if (boss.isBombNear(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible && !gameState.superForm) {
         applyBossDamage(controller.x);
       }
-      if (boss.isLaserHitting(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible) {
+      if (boss.isLaserHitting(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible && !gameState.superForm) {
         applyBossDamage(currentBoss.x);
       }
     }
@@ -852,13 +855,13 @@ function main() {
         shakeDuration = 0.2;
       }
 
-      if (bowser.isFireHitting(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible) {
+      if (bowser.isFireHitting(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible && !gameState.superForm) {
         applyBossDamage(currentBoss.x);
       }
-      if (bowser.isShockwaveHitting(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible) {
+      if (bowser.isShockwaveHitting(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible && !gameState.superForm) {
         applyBossDamage(currentBoss.x);
       }
-      if (bowser.isHammerNear(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible) {
+      if (bowser.isHammerNear(controller.x, controller.y) && controller.state !== SonicState.HURT && !gameState.invincible && !gameState.superForm) {
         applyBossDamage(controller.x);
       }
 

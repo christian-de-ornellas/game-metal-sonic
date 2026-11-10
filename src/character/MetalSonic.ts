@@ -57,16 +57,33 @@ export function drawMetalSonic(
 
   // Aura glow during super form or fade-out
   if (superForm || superFade > 0) {
-    const auraAlpha = superForm ? 0.3 + Math.sin(performance.now() * 0.006) * 0.1 : superFade * 0.3;
-    const auraRadius = s * 1.8 + Math.sin(performance.now() * 0.004) * s * 0.2;
+    const now = performance.now();
+    const auraAlpha = superForm ? 0.4 + Math.sin(now * 0.006) * 0.15 : superFade * 0.3;
+    const auraRadius = s * 2.0 + Math.sin(now * 0.004) * s * 0.3;
     const gradient = ctx.createRadialGradient(0, -s * 0.2, s * 0.2, 0, -s * 0.2, auraRadius);
     gradient.addColorStop(0, `rgba(255, 220, 50, ${auraAlpha})`);
-    gradient.addColorStop(0.5, `rgba(255, 200, 30, ${auraAlpha * 0.4})`);
+    gradient.addColorStop(0.4, `rgba(255, 200, 30, ${auraAlpha * 0.5})`);
     gradient.addColorStop(1, `rgba(255, 180, 0, 0)`);
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(0, -s * 0.2, auraRadius, 0, Math.PI * 2);
     ctx.fill();
+
+    // Golden sparkles orbiting the character
+    if (superForm) {
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + now * 0.003;
+        const orbitR = s * 1.2 + Math.sin(now * 0.005 + i * 1.5) * s * 0.3;
+        const sparkX = Math.cos(angle) * orbitR;
+        const sparkY = -s * 0.2 + Math.sin(angle) * orbitR * 0.6;
+        const sparkSize = s * 0.06 + Math.sin(now * 0.01 + i * 2) * s * 0.03;
+        const sparkAlpha = 0.6 + Math.sin(now * 0.008 + i) * 0.3;
+        ctx.beginPath();
+        ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 240, 100, ${sparkAlpha})`;
+        ctx.fill();
+      }
+    }
   }
 
   ctx.scale(dir, 1);
