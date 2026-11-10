@@ -9,7 +9,7 @@ const HEAD_RATIO = 0.38;
 const BODY_RATIO = 0.32;
 const LEG_RATIO = 0.30;
 
-// Flat color palette matching reference image
+// Flat color palette — Sonic-inspired clothing tones
 const COLORS = {
   skin: "#c68642",
   skinLight: "#d9a066",
@@ -18,16 +18,16 @@ const COLORS = {
   hairHighlight: "#2a2a2a",
   glassesFrame: "#2a2a3a",
   glassesLens: "rgba(200,220,255,0.15)",
-  shirtBurgundy: "#7a1f3d",
-  shirtWhite: "#f0f0f0",
-  pants: "#2c3548",
-  pantsLight: "#3a4560",
-  belt: "#3a3020",
-  beltBuckle: "#c0a040",
-  shoeDark: "#2a2a3a",
-  shoeSole: "#e0e0e0",
-  shoeAccent: "#1a1a2a",
-  shoeLace: "#d0d0d0",
+  shirtBurgundy: "#1560bd",    // Sonic cobalt blue (top half)
+  shirtWhite: "#f5e6c8",       // Sonic peach/cream belly tone (bottom half)
+  pants: "#0e3d8c",            // Darker Sonic blue
+  pantsLight: "#1a4fa0",       // Slightly lighter Sonic blue
+  belt: "#c8a832",             // Golden yellow (like Sonic's buckles)
+  beltBuckle: "#ffd700",       // Bright gold buckle
+  shoeDark: "#cc1520",         // Sonic's iconic red shoes
+  shoeSole: "#f0f0f0",         // White sole
+  shoeAccent: "#991010",       // Darker red accent
+  shoeLace: "#ffffff",         // White laces (like Sonic's shoe stripe)
   mouthRed: "#cc3333",
   mouthDark: "#8b1a1a",
   teeth: "#ffffff",
@@ -38,10 +38,10 @@ const COLORS = {
 const SUPER_OVERRIDES: Partial<typeof COLORS> = {
   hair: "#8b7500",
   hairHighlight: "#a08800",
-  shirtBurgundy: "#997711",
+  shirtBurgundy: "#b8960e",
   shirtWhite: "#fff8d0",
-  pants: "#4a3a10",
-  pantsLight: "#5a4a20",
+  pants: "#8a7008",
+  pantsLight: "#9a800a",
 };
 
 const OUTLINE_W = 0.035;
