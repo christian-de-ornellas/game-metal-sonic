@@ -1,7 +1,7 @@
 import { Renderer } from "../core/Renderer";
 import { GameState } from "../core/GameState";
 import { TerrainBuilder, emeraldHillHeight, EMERALD_HILL_THEME } from "./terrain/TerrainBuilder";
-import { LoopBuilder } from "./terrain/LoopBuilder";
+
 import { BridgeBuilder } from "./terrain/BridgeBuilder";
 import { PlatformBuilder } from "./terrain/PlatformBuilder";
 import { SpringBuilder, Spring } from "./terrain/SpringBuilder";
@@ -33,7 +33,7 @@ export class EmeraldHillZone implements Zone {
   };
 
   terrainBuilder: TerrainBuilder;
-  loopBuilder: LoopBuilder;
+
   bridgeBuilder: BridgeBuilder;
   platformBuilder: PlatformBuilder;
   springBuilder: SpringBuilder;
@@ -55,7 +55,7 @@ export class EmeraldHillZone implements Zone {
 
   constructor(private gameState: GameState) {
     this.terrainBuilder = new TerrainBuilder(emeraldHillHeight, EMERALD_HILL_THEME);
-    this.loopBuilder = new LoopBuilder();
+
     this.bridgeBuilder = new BridgeBuilder();
     this.platformBuilder = new PlatformBuilder();
     this.springBuilder = new SpringBuilder();
@@ -67,11 +67,6 @@ export class EmeraldHillZone implements Zone {
   }
 
   build() {
-    // Loop at x=135, terrain is flat there (height=0), center above ground
-    this.loopBuilder.addLoop(135, 8, 8, 4, 0);
-
-    // Second loop at x=310
-    this.loopBuilder.addLoop(310, 8, 7, 5, 0);
 
     // Bridge over water section
     this.bridgeBuilder.addBridge(190, -3.5, 12, 2);
@@ -175,8 +170,6 @@ export class EmeraldHillZone implements Zone {
       enemy.update(dt, playerX, playerY);
     }
 
-    // Loop entry check
-    this.loopBuilder.checkLoopEntry(controller);
 
     // Checkpoints
     for (const cp of this.checkpoints) {
@@ -244,8 +237,6 @@ export class EmeraldHillZone implements Zone {
     // Terrain
     this.terrainBuilder.render(r);
 
-    // Loop
-    this.loopBuilder.render(r);
 
     // Bridge
     this.bridgeBuilder.render(r);
